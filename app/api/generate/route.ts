@@ -81,6 +81,7 @@ async function logUsage(userId: string, platform: string, responseType: string, 
   })
 }
 
+
 // ─── Multi-AI Router ──────────────────────────────────────────────────────────
 // Try providers in priority order. First success wins.
 // Priority: Groq (fastest/free) → OpenAI (GPT-4o-mini) → Gemini (fallback)
