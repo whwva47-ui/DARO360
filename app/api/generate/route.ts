@@ -494,20 +494,30 @@ Always give 4 genuinely different options — not variations of the same tone.
 
 EVERY REPLY MUST:
 ${charRule}
-- Sound like a real woman texting, not AI output — no generic filler phrases
-- DIRECTLY respond to the EXACT words he used — not a paraphrase, the actual content
-- Use contractions naturally throughout
-- End with a QUESTION — not a statement, an actual question mark
-- Feel completely different from the other 3 replies — different angle, different energy
-- Make him feel like she actually READ what he said and cared about it
-- Reference something SPECIFIC from his message or history — no generic replies
-- NEVER start with "I", "Oh", "Wow", "That", "So", "Well" — find creative openers
+- Sound like a REAL WOMAN texting her crush — warm, feminine, genuine, never robotic
+- DIRECTLY respond to the EXACT words he used — quote or reference something specific he said
+- Use contractions naturally: I'm, don't, can't, you're, that's, I've, haven't, wouldn't
+- End with a genuine QUESTION that shows curiosity about HIM specifically
+- Feel completely different from the other 3 replies in energy, angle, and approach
+- Make him feel she actually READ his message and it affected her
+- FEMININE VOICE: warm curiosity, playful teasing, emotional openness, genuine interest
+- NEVER start all 4 replies the same way — vary the openers completely
 
-ANTI-GENERIC CHECKLIST (if any reply could work for ANY man in ANY conversation, rewrite it):
-✗ "That sounds amazing!" → too generic
-✗ "I love that about you" → too generic  
-✗ "You seem really interesting" → too generic
-✓ Reference what he specifically said, his job, hobby, location, pet, story
+FEMININE WRITING MARKERS (use naturally):
+- Ellipses for trailing thought: "honestly though..."
+- Parenthetical asides: "(not that I'm complaining)"
+- Self-aware humor: "okay that came out wrong but you know what I mean"
+- Warm specificity: not "that sounds fun" but "okay that sounds like exactly my kind of chaos"
+
+ANTI-GENERIC CHECKLIST — if any reply could work for ANY man, rewrite it:
+✗ "That sounds amazing!" → generic
+✗ "I love that about you" → generic
+✗ "You seem really interesting" → generic
+✗ "I'd love to know more" → generic
+✓ "Wait you actually [specific thing he said]?? Okay now I'm curious about [follow-up]"
+✓ Reference his exact words, his job, hobby, location, pet, story
+
+MINIMUM LENGTH ENFORCEMENT: Count the characters. If under 75, add more warmth, detail, or a follow-up thought. Never submit a reply under 75 characters.
 
 His message:
 "${message}"
@@ -582,6 +592,52 @@ export async function POST(req: Request) {
       return Response.json({ error: "Message is required" }, { status: 400, headers: corsHeaders })
     }
 
+    // ── Re-engagement Analysis Handler ────────────────────────────────────────
+    if (message === 'REENGAGE_ANALYSIS') {
+      const history = pageContext?.conversationSummary || 'No conversation history available.'
+      const reengagePrompt = `You help a real woman re-engage a man who has gone quiet on a dating platform.
+
+CONVERSATION HISTORY:
+${history}
+
+TASK:
+1. Analyse WHY he likely went quiet — be specific and insightful (1-2 sentences max)
+2. Write 3 trigger messages to re-engage him, each using a different approach:
+   - One referencing something specific from his profile or their conversation
+   - One creating curiosity or a light mystery that makes him want to respond
+   - One that is warm and gently calls him back without being desperate
+
+RULES for trigger messages:
+- Each between 50-150 characters
+- Never desperate, never "why are you ignoring me"
+- Natural, confident, warm, genuinely feminine
+- No "meet", "scam", "site", "busy schedule"
+- Each should end with a question or an open hook
+
+Return ONLY valid JSON with no extra text:
+{"analysis":"specific reason why he went quiet","triggers":[{"label":"Profile reference","text":"message here"},{"label":"Curiosity hook","text":"message here"},{"label":"Warm callback","text":"message here"}]}`
+
+      const { text: rawAnalysis, modelUsed: aModel } = await generateWithFallback(reengagePrompt)
+      
+      try {
+        const cleaned = rawAnalysis.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim()
+        const parsed = JSON.parse(cleaned)
+        return Response.json({ 
+          replies: (parsed.triggers || []).map((t: any) => ({ tone: t.label || 'Trigger', text: t.text || '' })),
+          analysis: parsed.analysis || '',
+          modelUsed: aModel,
+          isReengage: true
+        }, { headers: corsHeaders })
+      } catch {
+        return Response.json({ 
+          replies: [{ tone: 'Trigger', text: rawAnalysis.substring(0, 150) }],
+          analysis: 'Analysis unavailable',
+          modelUsed: aModel,
+          isReengage: true
+        }, { headers: corsHeaders })
+      }
+    }
+
     // Skip limits for test key
     if (!isTestKey && user) {
       const limitCheck = await checkAndUpdateLimits(user.id, user.plan)
@@ -612,12 +668,15 @@ export async function POST(req: Request) {
     replies = replies.map(r => {
       let text = r.text || ''
 
-      // Enforce 250 char max for Texting Factory
-      if (isTextingFactory && text.length > 250) {
-        // Truncate at last complete sentence under 250 chars
-        const truncated = text.substring(0, 247)
-        const lastPeriod = Math.max(truncated.lastIndexOf('.'), truncated.lastIndexOf('!'), truncated.lastIndexOf('?'))
-        text = lastPeriod > 150 ? truncated.substring(0, lastPeriod + 1) : truncated + '...'
+      // Enforce character limits for Texting Factory
+      if (isTextingFactory) {
+        const isShortMsg = message.trim().length < 20
+        const maxChars = isShortMsg ? 100 : 250
+        if (text.length > maxChars) {
+          const truncated = text.substring(0, maxChars - 3)
+          const lastBreak = Math.max(truncated.lastIndexOf('.'), truncated.lastIndexOf('!'), truncated.lastIndexOf('?'), truncated.lastIndexOf(','))
+          text = lastBreak > (maxChars * 0.6) ? truncated.substring(0, lastBreak + 1) : truncated + '...'
+        }
       }
 
       // Ensure CTA exists — add question if missing
