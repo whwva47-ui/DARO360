@@ -120,7 +120,7 @@ async function generateWithFallback(prompt: string): Promise<AIResult> {
           model: groq("llama-3.3-70b-versatile"),
           prompt,
           temperature: 0.9,
-          maxTokens: 900,
+          maxOutputTokens: 900,
         })
         return { text: result.text, modelUsed: "groq/llama-3.3-70b" }
       }
@@ -136,7 +136,7 @@ async function generateWithFallback(prompt: string): Promise<AIResult> {
           model: openai("gpt-4o-mini"),
           prompt,
           temperature: 0.9,
-          maxTokens: 900,
+          maxOutputTokens: 900,
         })
         return { text: result.text, modelUsed: "openai/gpt-4o-mini" }
       }
@@ -152,7 +152,7 @@ async function generateWithFallback(prompt: string): Promise<AIResult> {
           model: google("gemini-1.5-flash"),
           prompt,
           temperature: 0.9,
-          maxTokens: 900,
+          maxOutputTokens: 900,
         })
         return { text: result.text, modelUsed: "google/gemini-1.5-flash" }
       }
