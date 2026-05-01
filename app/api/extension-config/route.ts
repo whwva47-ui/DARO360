@@ -1,4 +1,4 @@
-// v2.1.2
+// v2.1.3
 import { NextResponse } from 'next/server'
 
 const corsHeaders = {
@@ -99,3 +99,5 @@ export async function GET() {
 
   return NextResponse.json(config, { headers: corsHeaders })
 }
+
+
