@@ -78,7 +78,7 @@ async function logUsage(userId: string, platform: string, responseType: string, 
     platform: platform || 'unknown',
     response_type: responseType,
     metadata: { ai_model: aiModel }
-  }).catch(() => {}) // non-fatal
+  })
 }
 
 // ─── Multi-AI Router ──────────────────────────────────────────────────────────
