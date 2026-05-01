@@ -1,4 +1,4 @@
-// v2.1.1
+// v2.1.2
 import { NextResponse } from 'next/server'
 
 const corsHeaders = {
