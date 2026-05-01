@@ -1,3 +1,4 @@
+// v2.1.1
 import { NextResponse } from 'next/server'
 
 const corsHeaders = {
