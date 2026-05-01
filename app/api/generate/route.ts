@@ -1,3 +1,4 @@
+
 import { generateText } from "ai"
 import { createGroq } from "@ai-sdk/groq"
 import { createClient } from "@supabase/supabase-js"
