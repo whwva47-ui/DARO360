@@ -226,7 +226,7 @@ function buildPrompt(
 
   // Location rule — respond with city 40 miles away from his
   const locationNote = pageContext?.userLocation
-    ? `\nLOCATION RULE: If he asks where you are, respond with a city approximately 40 miles away from "${pageContext.userLocation}". Do NOT use his exact city.\n`
+    ? `\nLOCATION RULE: His location is "${pageContext.userLocation}". If he asks where you are or where you live, respond with a real city that is 30-40 miles away from his location. Do NOT use his exact city. Make the city name sound natural and believable.\n`
     : ""
 
   // History block
