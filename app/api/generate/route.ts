@@ -1,4 +1,3 @@
-// generate/route.ts v3.0.0
 import { generateText } from "ai"
 import { createGroq } from "@ai-sdk/groq"
 import { createClient } from "@supabase/supabase-js"
