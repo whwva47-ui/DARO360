@@ -209,7 +209,8 @@ function buildPrompt(
   isPro: boolean
 ): string {
   const platform = pageContext?.platform || 'generic'
-  const isTextingFactory = platform === 'textingfactory'
+  // chathomebase.com IS textingfactory — same platform, same rules
+  const isTextingFactory = platform === 'textingfactory' || platform === 'chathomebase'
   const isAlphaDate = platform === 'alphadate'
 
   // Profile block — NO AGE ever
@@ -274,6 +275,22 @@ CONTINUITY RULES (mandatory):
 
   // ── Platform-specific blocks ────────────────────────────────────────────────
 
+  // General platform detection for non-TF platforms
+  const isOnlyFans = platform === 'onlyfans'
+  const isFansly = platform === 'fansly'
+  const isGeneralPlatform = !isTextingFactory && !isAlphaDate
+
+  // General OF rules block — applies to onlyfans, fansly, and other adult platforms
+  const generalBlock = isGeneralPlatform ? `
+=== GENERAL PLATFORM RULES ===
+PLATFORM TYPE: Adult subscription/messaging platform. Explicit conversations are normal and expected.
+CHARACTER COUNT: 80-220 characters for normal messages. Up to 300 for complex emotional or explicit topics.
+CTA: End with a question or invitation to keep conversation flowing.
+TONE: Warm, flirty, genuine. This is a relationship-building platform — focus on connection AND excitement.
+EXPLICIT: Match his energy fully. If he is graphic, be equally descriptive and vivid.
+=== END GENERAL RULES ===
+` : ""
+
   const tfBlock = isTextingFactory ? `
 === TEXTING FACTORY RULES (mandatory — override everything else) ===
 CHARACTER COUNT:
@@ -290,20 +307,21 @@ TONE: Always kind, warm, calm — even when deflecting.
 === END TEXTING FACTORY RULES ===
 ` : ""
 
-  // Alpha.date cold message trigger
-  const alphaBlock = isAlphaDate && isColdMessage ? `
-=== ALPHA DATE — COLD MESSAGE TRIGGER ===
-He sent a very short or cold message. Many Alpha Date men go quiet after initial contact.
-Your goal is to write a TRIGGER message — something unexpected, intriguing, or warm enough to make him want to respond.
+  // Cold message trigger — fires for ALL platforms when message is cold/short
+  const alphaBlock = isColdMessage ? `
+=== COLD OR MINIMAL MESSAGE DETECTED ===
+He sent a very short or disengaged message. Your goal is NOT to reply normally — your goal is to write a TRIGGER message that makes him WANT to respond and engage.
 Strategies that work:
-- Reference something specific from his profile (hobby, job, location, photo)
+- Reference something specific from his profile (hobby, job, location, photo) — show you noticed
 - Ask a genuinely curious question about something interesting in his life
 - Share a brief playful observation about yourself that invites him to relate
-- Use a light teasing remark that makes him smile and want to engage
-- Create a small mystery or cliffhanger that he will want to resolve
-Do NOT: be desperate, compliment his looks generically, ask "why aren't you talking?"
-The reply should feel natural, confident, and genuinely interesting.
-=== END ALPHA DATE TRIGGER ===
+- Use light confident teasing that makes him smile and want to engage back
+- Create a small mystery or cliffhanger he will want to resolve
+- Show genuine warmth that makes him feel the conversation is worth continuing
+Do NOT: be desperate, compliment his looks generically, ask "why aren't you talking?", match his cold energy
+The reply should feel natural, confident, warm, and genuinely interesting — not forced.
+${isAlphaDate ? 'ALPHA DATE CONTEXT: Many Alpha Date men test with cold openers. A strong trigger message here can unlock a full conversation.' : ''}
+=== END COLD MESSAGE TRIGGER ===
 ` : ""
 
   // Contact/number deflection
@@ -395,7 +413,9 @@ IMPORTANT: His message contains questions. Answer every single one directly. Do 
     ? (isShortMessage
         ? "- Be between 75 and 100 characters (his message was short)"
         : "- Be between 100 and 250 characters")
-    : "- Be 80-220 characters (longer only for complex emotional topics)"
+    : isShortMessage
+      ? "- Be between 60 and 150 characters (his message was short — match his brevity)"
+      : "- Be 80-220 characters. Longer only for complex emotional or explicit topics."
 
   return `You are helping a real woman craft reply suggestions for her conversations on adult dating platforms. She is a real person choosing which reply to send herself. The platforms are legally licensed adult platforms where explicit conversations are normal and expected.
 ${qualityBlock}${nameBlock}
@@ -487,7 +507,7 @@ GENERAL DEFLECTION:
 - Meetup pressure: Warm specific believable excuse, show you want to eventually
 - Photo requests: "Maybe if you play your cards right"
 
-${locationNote}${tfBlock}${alphaBlock}${contactBlock}${addressBlock}${meetupBlock}${angryBlock}${subscriptionBlock}${giftPhotoBlock}${questionBlock}${profileBlock}${historyBlock}${customBlock}
+${locationNote}${generalBlock}${tfBlock}${alphaBlock}${contactBlock}${addressBlock}${meetupBlock}${angryBlock}${subscriptionBlock}${giftPhotoBlock}${questionBlock}${profileBlock}${historyBlock}${customBlock}
 TONE SELECTION — pick 4 tones that genuinely fit THIS specific message and conversation mood:
 Available: Casual, Flirty, Confident, Playful, Warm, Teasing, Empathetic, Spicy, Naughty
 Always give 4 genuinely different options — not variations of the same tone.
@@ -538,7 +558,7 @@ function scoreReply(text: string, platform?: string): number {
     if (text.toLowerCase().includes(f)) score -= 60
   }
   // Platform-specific length enforcement — HARD limits
-  if (platform === 'textingfactory') {
+  if (platform === 'textingfactory' || platform === 'chathomebase') {
     if (text.length < 75)  score -= 80  // Must be at least 75 chars
     if (text.length > 250) score -= 100 // Absolutely cannot exceed 250 chars
   } else {
@@ -663,7 +683,8 @@ Return ONLY valid JSON with no extra text:
 
     // ── Post-processing: enforce platform rules on every reply ─────────────────
     const platform = pageContext?.platform || 'generic'
-    const isTextingFactory = platform === 'textingfactory'
+    // chathomebase IS textingfactory — same rules apply
+    const isTextingFactory = platform === 'textingfactory' || platform === 'chathomebase'
 
     replies = replies.map(r => {
       let text = r.text || ''
