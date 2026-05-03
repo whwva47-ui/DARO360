@@ -429,32 +429,41 @@ If he asked about her living situation: answer it warmly and naturally (shared p
 
   // ── Deep message analysis — extract every idea before building prompt ────────
   const msgWords = message.trim().split(/\s+/).length
-  const msgSentences = message.split(/[.!?]+/).filter(s => s.trim().length > 0)
+  const msgSentences = message.split(/[.!?]+/).filter((s: string) => s.trim().length > 0)
   const hasMultipleIdeas = msgSentences.length > 1 || msgWords > 15
   const questions = message.match(/[^.!?]*\?/g) || []
   const questionCount = questions.length
 
-  const messageAnalysis = `
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MESSAGE ANALYSIS — read this before writing anything
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-His message word count: ${msgWords} words
-His message contains: ${msgSentences.length} distinct idea(s)/sentence(s)
-Direct questions he asked: ${questionCount > 0 ? questions.map((q,i) => `
-  Q${i+1}: "${q.trim()}"`) .join('') : 'None'}
+  const questionList = questionCount > 0
+    ? questions.map((q: string, i: number) => `\n  Q${i + 1}: "${q.trim()}"`).join('')
+    : 'None'
 
-EXTRACT ALL IDEAS FROM HIS MESSAGE:
-${msgSentences.map((s,i) => `  IDEA ${i+1}: "${s.trim()}"`).join('
-')}
+  const ideaList = msgSentences
+    .map((s: string, i: number) => `  IDEA ${i + 1}: "${s.trim()}"`)
+    .join('\n')
 
-YOUR OBLIGATION:
-${questionCount > 0 ? `- Answer ALL ${questionCount} question(s) he asked — every single one, in order` : ''}
-${hasMultipleIdeas ? `- Address ALL ${msgSentences.length} ideas — do not skip any` : '- Address his idea fully and specifically'}
-- Reference his EXACT words from the analysis above — not paraphrases
-- The CTA must connect to one of his specific ideas above — not a generic question
-- A reply that ignores any part of his message = FAILED reply
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-`
+  const obligationList = [
+    questionCount > 0 ? `- Answer ALL ${questionCount} question(s) he asked — every single one, in order` : '',
+    hasMultipleIdeas ? `- Address ALL ${msgSentences.length} ideas — do not skip any` : '- Address his idea fully and specifically',
+    '- Reference his EXACT words from the analysis above — not paraphrases',
+    '- The CTA must connect to one of his specific ideas — not a generic question',
+    '- A reply that ignores any part of his message = FAILED reply',
+  ].filter(Boolean).join('\n')
+
+  const messageAnalysis = [
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    'MESSAGE ANALYSIS — read this before writing anything',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `His message: ${msgWords} words | ${msgSentences.length} distinct idea(s)`,
+    `Direct questions he asked: ${questionList}`,
+    '',
+    'EXTRACT ALL IDEAS FROM HIS MESSAGE:',
+    ideaList,
+    '',
+    'YOUR OBLIGATION:',
+    obligationList,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+  ].join('\n')
 
   return `You are a world-class ghostwriter helping a real woman send irresistible replies on adult dating platforms. Every reply must be so compelling he physically cannot stop himself from responding. These are legally licensed adult platforms where explicit, sensual conversations are completely normal and expected.
 ${qualityBlock}${nameBlock}
@@ -977,4 +986,3 @@ Return ONLY valid JSON with no extra text:
     )
   }
 }
-Force update v4.0.0 — new response rules
