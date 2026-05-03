@@ -977,3 +977,4 @@ Return ONLY valid JSON with no extra text:
     )
   }
 }
+Force update v4.0.0 — new response rules
