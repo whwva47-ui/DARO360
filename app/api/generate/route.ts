@@ -1,4 +1,4 @@
-// generate/route.ts v3.0.0
+// generate/route.ts v4.0.0 — updated 2026-05-03 16:36
 import { generateText } from "ai"
 import { createGroq } from "@ai-sdk/groq"
 import { createClient } from "@supabase/supabase-js"
