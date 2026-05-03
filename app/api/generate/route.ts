@@ -36,14 +36,10 @@ function getSupabaseAdmin() {
 }
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = ['chrome-extension://', 'moz-extension://']
-
-function getCorsHeaders(origin: string | null) {
-  const isAllowed = origin && (
-    allowedOrigins.some(a => origin.startsWith(a)) || origin.includes('localhost')
-  )
+// Allow all origins — extension runs on multiple platforms
+function getCorsHeaders(_origin: string | null) {
   return {
-    "Access-Control-Allow-Origin": isAllowed ? origin : "*",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
   }
