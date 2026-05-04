@@ -633,8 +633,9 @@ Return ONLY valid JSON with no extra text:
     }
 
     // Skip limits for test key
+    let limitCheck: { allowed: boolean; remaining: number; error?: string } = { allowed: true, remaining: 999 }
     if (!isTestKey && user) {
-      const limitCheck = await checkAndUpdateLimits(user.id, user.plan)
+      limitCheck = await checkAndUpdateLimits(user.id, user.plan)
       if (!limitCheck.allowed) {
         return Response.json({ error: limitCheck.error, remaining: 0 }, { status: 429, headers: corsHeaders })
       }
