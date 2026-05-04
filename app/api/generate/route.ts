@@ -773,12 +773,15 @@ Return ONLY valid JSON with no extra text:
 
     const finalReplies = scored.length >= 2 ? scored : replies.slice(0, 4)
 
-    await logUsage(user.id, pageContext?.platform || 'extension', isPro ? 'pro' : 'standard', modelUsed)
+    // Only log usage and return limits if user is authenticated
+    if (!isTestKey && user) {
+      await logUsage(user.id, pageContext?.platform || 'extension', isPro ? 'pro' : 'standard', modelUsed)
+    }
 
     return Response.json({
       replies: finalReplies,
-      remaining: limitCheck.remaining,
-      plan: user.plan,
+      remaining: isTestKey ? 999 : (limitCheck?.remaining ?? 999),
+      plan: isTestKey ? 'pro' : (user?.plan ?? 'free'),
       modelUsed,
     }, { headers: corsHeaders })
 
