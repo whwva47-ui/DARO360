@@ -1,8 +1,9 @@
-// CIC generate route v6.0.0 — bulletproof rewrite
+// CIC generate route v7.0.0 — Groq + Gemini + OpenAI fallback
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 function cors() {
@@ -34,17 +35,31 @@ async function generate(prompt: string): Promise<string> {
       })
       if (result.text) return result.text
     } catch (e: any) {
-      const errMsg = e?.message || e?.toString() || 'unknown'
-      const errStatus = e?.statusCode || e?.status || ''
-      errors.push(`Groq(${errStatus}): ${errMsg}`)
-      console.error('[CIC] Groq error details:', JSON.stringify({ status: errStatus, message: errMsg, name: e?.name }))
+      const status = e?.statusCode || e?.status || ''
+      errors.push(`Groq(${status}): ${e?.message}`)
+      console.warn('[CIC] Groq failed:', status, e?.message?.substring(0, 100))
     }
-  } else {
-    console.error('[CIC] GROQ_API_KEY is not set in environment variables')
-    errors.push('Groq: API key not configured')
   }
 
-  // Try OpenAI as fallback
+  // Try Google Gemini (free tier, good fallback)
+  const googleKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY
+  if (googleKey) {
+    try {
+      const google = createGoogleGenerativeAI({ apiKey: googleKey })
+      const result = await generateText({
+        model: google('gemini-1.5-flash'),
+        prompt,
+        temperature: 0.85,
+        maxOutputTokens: 800,
+      })
+      if (result.text) return result.text
+    } catch (e: any) {
+      errors.push(`Gemini: ${e?.message}`)
+      console.warn('[CIC] Gemini failed:', e?.message?.substring(0, 100))
+    }
+  }
+
+  // Try OpenAI last
   const openaiKey = process.env.OPENAI_API_KEY
   if (openaiKey) {
     try {
@@ -57,15 +72,14 @@ async function generate(prompt: string): Promise<string> {
       })
       if (result.text) return result.text
     } catch (e: any) {
-      const errMsg = e?.message || e?.toString() || 'unknown'
-      errors.push(`OpenAI: ${errMsg}`)
-      console.error('[CIC] OpenAI error:', errMsg)
+      errors.push(`OpenAI: ${e?.message}`)
+      console.warn('[CIC] OpenAI failed:', e?.message?.substring(0, 100))
     }
-  } else {
-    console.warn('[CIC] OPENAI_API_KEY not set — no OpenAI fallback')
   }
 
-  throw new Error('All AI providers failed: ' + errors.join(' | '))
+  const allErrors = errors.join(' | ')
+  console.error('[CIC] All providers failed:', allErrors)
+  throw new Error('All AI providers failed: ' + allErrors)
 }
 
 // ─── Parse AI response ────────────────────────────────────────────────────────
