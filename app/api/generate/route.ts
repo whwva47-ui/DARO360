@@ -34,9 +34,14 @@ async function generate(prompt: string): Promise<string> {
       })
       if (result.text) return result.text
     } catch (e: any) {
-      errors.push('Groq: ' + e.message)
-      console.warn('[CIC] Groq failed:', e.message)
+      const errMsg = e?.message || e?.toString() || 'unknown'
+      const errStatus = e?.statusCode || e?.status || ''
+      errors.push(`Groq(${errStatus}): ${errMsg}`)
+      console.error('[CIC] Groq error details:', JSON.stringify({ status: errStatus, message: errMsg, name: e?.name }))
     }
+  } else {
+    console.error('[CIC] GROQ_API_KEY is not set in environment variables')
+    errors.push('Groq: API key not configured')
   }
 
   // Try OpenAI as fallback
@@ -52,9 +57,12 @@ async function generate(prompt: string): Promise<string> {
       })
       if (result.text) return result.text
     } catch (e: any) {
-      errors.push('OpenAI: ' + e.message)
-      console.warn('[CIC] OpenAI failed:', e.message)
+      const errMsg = e?.message || e?.toString() || 'unknown'
+      errors.push(`OpenAI: ${errMsg}`)
+      console.error('[CIC] OpenAI error:', errMsg)
     }
+  } else {
+    console.warn('[CIC] OPENAI_API_KEY not set — no OpenAI fallback')
   }
 
   throw new Error('All AI providers failed: ' + errors.join(' | '))
@@ -250,10 +258,10 @@ Return ONLY: {"analysis":"why he went quiet","triggers":[{"label":"label","text"
     }, { headers })
 
   } catch (error: any) {
-    console.error('[CIC] Error:', error?.message)
-    // Never crash — always return valid response
+    const errMsg = error?.message || 'Generation failed'
+    console.error('[CIC] Error:', errMsg)
     return NextResponse.json({
-      error: error?.message || 'Generation failed — please try again',
+      error: errMsg,
       replies: [],
       remaining: 999
     }, { status: 200, headers })
