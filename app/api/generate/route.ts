@@ -1,4 +1,4 @@
-// generate/route.ts v4.1.0 — CORS fix 2026-05-03 20:10
+// CIC generate route v5.0.0 — null user fix
 import { generateText } from "ai"
 import { createGroq } from "@ai-sdk/groq"
 import { createClient } from "@supabase/supabase-js"
