@@ -1,9 +1,9 @@
-// CIC generate route v7.0.0 — Groq + Gemini + OpenAI fallback
+// CIC generate route v8.0.0 — fixed Gemini model + Groq fallback model
 import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { google } from '@ai-sdk/google'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 function cors() {
@@ -22,40 +22,58 @@ export async function OPTIONS() {
 async function generate(prompt: string): Promise<string> {
   const errors: string[] = []
 
-  // Try Groq first (fastest)
+  // Try Groq with multiple models (if one hits daily limit, try next)
   const groqKey = process.env.GROQ_API_KEY
   if (groqKey) {
-    try {
-      const groq = createGroq({ apiKey: groqKey })
-      const result = await generateText({
-        model: groq('llama-3.3-70b-versatile'),
-        prompt,
-        temperature: 0.85,
-        maxOutputTokens: 800,
-      })
-      if (result.text) return result.text
-    } catch (e: any) {
-      const status = e?.statusCode || e?.status || ''
-      errors.push(`Groq(${status}): ${e?.message}`)
-      console.warn('[CIC] Groq failed:', status, e?.message?.substring(0, 100))
+    const groqModels = [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'gemma2-9b-it',
+      'mixtral-8x7b-32768',
+    ]
+    const groq = createGroq({ apiKey: groqKey })
+    for (const model of groqModels) {
+      try {
+        const result = await generateText({
+          model: groq(model),
+          prompt,
+          temperature: 0.85,
+          maxOutputTokens: 800,
+        })
+        if (result.text) {
+          console.log('[CIC] Groq success with model:', model)
+          return result.text
+        }
+      } catch (e: any) {
+        const status = e?.statusCode || e?.status || ''
+        errors.push(`Groq/${model}(${status}): ${e?.message?.substring(0,80)}`)
+        console.warn('[CIC] Groq model failed:', model, status)
+        // Only try next model if rate limited — otherwise break
+        if (status !== 429 && !e?.message?.includes('Rate limit') && !e?.message?.includes('limit')) break
+      }
     }
   }
 
-  // Try Google Gemini (free tier, good fallback)
+  // Try Google Gemini — AI SDK v5 uses google() directly
   const googleKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY
   if (googleKey) {
-    try {
-      const google = createGoogleGenerativeAI({ apiKey: googleKey })
-      const result = await generateText({
-        model: google('gemini-1.5-flash'),
-        prompt,
-        temperature: 0.85,
-        maxOutputTokens: 800,
-      })
-      if (result.text) return result.text
-    } catch (e: any) {
-      errors.push(`Gemini: ${e?.message}`)
-      console.warn('[CIC] Gemini failed:', e?.message?.substring(0, 100))
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest']
+    for (const model of geminiModels) {
+      try {
+        const result = await generateText({
+          model: google(model),
+          prompt,
+          temperature: 0.85,
+          maxOutputTokens: 800,
+        })
+        if (result.text) {
+          console.log('[CIC] Gemini success with model:', model)
+          return result.text
+        }
+      } catch (e: any) {
+        errors.push(`Gemini/${model}: ${e?.message?.substring(0,80)}`)
+        console.warn('[CIC] Gemini model failed:', model, e?.message?.substring(0,80))
+      }
     }
   }
 
@@ -72,14 +90,11 @@ async function generate(prompt: string): Promise<string> {
       })
       if (result.text) return result.text
     } catch (e: any) {
-      errors.push(`OpenAI: ${e?.message}`)
-      console.warn('[CIC] OpenAI failed:', e?.message?.substring(0, 100))
+      errors.push(`OpenAI: ${e?.message?.substring(0,80)}`)
     }
   }
 
-  const allErrors = errors.join(' | ')
-  console.error('[CIC] All providers failed:', allErrors)
-  throw new Error('All AI providers failed: ' + allErrors)
+  throw new Error('All AI providers failed: ' + errors.join(' | '))
 }
 
 // ─── Parse AI response ────────────────────────────────────────────────────────
