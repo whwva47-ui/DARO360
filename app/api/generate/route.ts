@@ -581,7 +581,14 @@ export async function POST(req: Request) {
       isPro = user.plan === 'pro'
     }
 
-    const { message, pageContext, customPrompt } = await req.json()
+    const { message: rawMessage, pageContext, customPrompt } = await req.json()
+    
+    // Sanitize message — remove characters that break JSON/prompt templates
+    const message = (rawMessage || '').toString()
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ') // Remove control chars
+      .replace(/`/g, "'") // Replace backticks
+      .trim()
+      
     if (!message) {
       return Response.json({ error: "Message is required" }, { status: 400, headers: corsHeaders })
     }
@@ -788,9 +795,15 @@ Return ONLY valid JSON with no extra text:
 
   } catch (error) {
     console.error('[CIC] Generate error:', error)
+    // Never return 500 — always return something usable
     return Response.json(
-      { error: "Failed to generate replies. Please try again." },
-      { status: 500, headers: getCorsHeaders(origin) }
+      { 
+        error: "Server error — please try again",
+        replies: [],
+        remaining: 999,
+        modelUsed: 'error'
+      },
+      { status: 200, headers: getCorsHeaders(origin) }
     )
   }
 }
