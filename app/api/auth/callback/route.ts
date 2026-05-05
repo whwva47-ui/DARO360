@@ -61,5 +61,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/landing?auth=error`))
+  return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/?auth=error`))
 }
