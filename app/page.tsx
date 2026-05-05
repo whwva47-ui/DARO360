@@ -95,15 +95,17 @@ export default function LandingPage() {
   }, [])
 
   async function sendOtp() {
-    if (!phone) { setMsg('Phone number is required'); setMsgOk(false); return }
+    const fullPhone = countryCode + phoneLocal
+    if (!phoneLocal || phoneLocal.length < 6) { setMsg('Enter your phone number'); setMsgOk(false); return }
+    setPhone(fullPhone)
     setLoading(true); setMsg('')
     try {
       const r = await fetch(API + '/api/auth/send-otp', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ phone })
+        body: JSON.stringify({ phone: fullPhone })
       })
       const d = await r.json()
-      if (d.success) { setOtpSent(true); setMsg('OTP sent to ' + phone); setMsgOk(true) }
+      if (d.success) { setOtpSent(true); setMsg('OTP sent to ' + fullPhone); setMsgOk(true) }
       else { setMsg(d.error || 'Failed to send OTP'); setMsgOk(false) }
     } catch { setMsg('Connection error'); setMsgOk(false) }
     setLoading(false)
@@ -111,21 +113,22 @@ export default function LandingPage() {
 
   async function handleSignup() {
     if (!email) { setMsg('Email is required'); setMsgOk(false); return }
-    if (step === 'signup' && !phone) { setMsg('Phone is required'); setMsgOk(false); return }
+    const fullPhone = countryCode + phoneLocal
+    if (step === 'signup' && !phoneLocal) { setMsg('Phone is required'); setMsgOk(false); return }
     if (step === 'signup' && otpSent && !otp) { setMsg('Please enter the OTP'); setMsgOk(false); return }
     setLoading(true); setMsg('')
     try {
       if (step === 'signup' && otpSent) {
         const v = await fetch(API + '/api/auth/verify-otp', {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ phone, otp, email })
+          body: JSON.stringify({ phone: fullPhone, otp, email })
         })
         const vd = await v.json()
         if (!vd.success) { setMsg(vd.error || 'Invalid OTP'); setMsgOk(false); setLoading(false); return }
       }
       const r = await fetch(API + '/api/auth/magic-link', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ email, phone, referralCode: referral || undefined })
+        body: JSON.stringify({ email, phone: fullPhone, referralCode: referral || undefined })
       })
       const d = await r.json()
       if (d.success) setStep('sent')
@@ -619,7 +622,7 @@ export default function LandingPage() {
                     style={{flex:1,background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 12px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,transition:'border-color 0.2s'}}
                     onFocus={e=>{e.target.style.borderColor='rgba(168,85,247,0.4)'}}
                     onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.07)'}} />
-                  <button onClick={()=>{setPhone(countryCode+phoneLocal);sendOtp()}} disabled={loading||otpSent||!phoneLocal}
+                  <button onClick={sendOtp} disabled={loading||otpSent||!phoneLocal}
                     style={{padding:'11px 10px',background:otpSent?'rgba(34,197,94,0.08)':'rgba(124,58,237,0.12)',border:`1px solid ${otpSent?'rgba(34,197,94,0.25)':'rgba(124,58,237,0.25)'}`,borderRadius:'8px',color:otpSent?'#22c55e':'#a855f7',cursor:otpSent||!phoneLocal?'not-allowed':'pointer',fontFamily:'sans-serif',fontSize:'11px',fontWeight:'600',whiteSpace:'nowrap' as any}}>
                     {otpSent?'✓':'OTP'}
                   </button>
