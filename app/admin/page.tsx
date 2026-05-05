@@ -130,7 +130,7 @@ export default function AdminPanel() {
               <table style={{width:'100%',borderCollapse:'collapse',fontSize:'13px'}}>
                 <thead>
                   <tr style={{borderBottom:'1px solid #1e1e32'}}>
-                    {['Email','Phone','Plan','Usage','Points','Joined'].map(h=>(
+                    {['Email','Phone','Plan','Change Plan','Usage','Points','Joined'].map(h=>(
                       <th key={h} style={{padding:'10px 12px',textAlign:'left',color:'#71767b',fontWeight:'600'}}>{h}</th>
                     ))}
                   </tr>
@@ -142,10 +142,35 @@ export default function AdminPanel() {
                       <td style={{padding:'10px 12px',color:'#71767b'}}>{u.phone||'—'}</td>
                       <td style={{padding:'10px 12px'}}>
                         <span style={{padding:'2px 8px',borderRadius:'12px',fontSize:'11px',fontWeight:'700',
-                          background:u.plan==='pro'?'linear-gradient(135deg,#7c3aed,#d4a300)':u.plan==='expired'?'rgba(239,68,68,0.15)':'rgba(255,255,255,0.05)',
-                          color:u.plan==='pro'?'#fff':u.plan==='expired'?'#f43f5e':'#e2e8f0'}}>
+                          background:u.plan==='pro'?'linear-gradient(135deg,#7c3aed,#d4a300)':u.plan==='expired'?'rgba(239,68,68,0.15)':u.plan==='basic'?'rgba(56,189,248,0.15)':'rgba(255,255,255,0.05)',
+                          color:u.plan==='pro'?'#fff':u.plan==='expired'?'#f43f5e':u.plan==='basic'?'#38bdf8':'#e2e8f0'}}>
                           {u.plan?.toUpperCase()}
                         </span>
+                      </td>
+                      <td style={{padding:'6px 12px'}}>
+                        <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
+                          <select defaultValue="" onChange={async(e)=>{
+                            const newPlan = e.target.value
+                            if (!newPlan) return
+                            if (!confirm(`Change ${u.email} to ${newPlan.toUpperCase()}?`)) { e.target.value=''; return }
+                            const r = await fetch('/api/admin/upgrade', {
+                              method:'POST',
+                              headers:{'Content-Type':'application/json','X-Admin-Key':'cic_admin_2026'},
+                              body: JSON.stringify({ userId: u.id, plan: newPlan })
+                            })
+                            const d = await r.json()
+                            if (d.success) { setMsg(`✓ ${u.email} upgraded to ${newPlan}`); loadData() }
+                            else { setMsg('Error: ' + d.error) }
+                            e.target.value = ''
+                          }}
+                            style={{background:'#0d0d18',border:'1px solid #1e1e32',borderRadius:'5px',padding:'4px 6px',color:'#e2e8f0',fontSize:'11px',cursor:'pointer',outline:'none'}}>
+                            <option value="">Change...</option>
+                            <option value="trial">Trial</option>
+                            <option value="basic">Basic</option>
+                            <option value="pro">Pro</option>
+                            <option value="expired">Expired</option>
+                          </select>
+                        </div>
                       </td>
                       <td style={{padding:'10px 12px',color:'#71767b'}}>{u.total_generations||0}</td>
                       <td style={{padding:'10px 12px',color:'#fbbf24'}}>{u.points||0} pts</td>
