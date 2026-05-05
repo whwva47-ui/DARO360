@@ -25,78 +25,11 @@ const REVIEWS = [
   { name: 'Chloe B.', role: 'Texting Factory Operator', stars: 5, text: "The quality of responses is insane. Every reply feels personal, warm, and real. My clients are more engaged than ever and tips have gone up 60%.", time: '2 weeks ago', avatar: 'CB' },
 ]
 
-const COUNTRY_CODES = [
-  {dial:'+93',flag:'🇦🇫'},{dial:'+355',flag:'🇦🇱'},{dial:'+213',flag:'🇩🇿'},
-  {dial:'+376',flag:'🇦🇩'},{dial:'+244',flag:'🇦🇴'},{dial:'+54',flag:'🇦🇷'},
-  {dial:'+374',flag:'🇦🇲'},{dial:'+61',flag:'🇦🇺'},{dial:'+43',flag:'🇦🇹'},
-  {dial:'+994',flag:'🇦🇿'},{dial:'+973',flag:'🇧🇭'},{dial:'+880',flag:'🇧🇩'},
-  {dial:'+375',flag:'🇧🇾'},{dial:'+32',flag:'🇧🇪'},{dial:'+501',flag:'🇧🇿'},
-  {dial:'+229',flag:'🇧🇯'},{dial:'+975',flag:'🇧🇹'},{dial:'+591',flag:'🇧🇴'},
-  {dial:'+387',flag:'🇧🇦'},{dial:'+267',flag:'🇧🇼'},{dial:'+55',flag:'🇧🇷'},
-  {dial:'+673',flag:'🇧🇳'},{dial:'+359',flag:'🇧🇬'},{dial:'+226',flag:'🇧🇫'},
-  {dial:'+257',flag:'🇧🇮'},{dial:'+855',flag:'🇰🇭'},{dial:'+237',flag:'🇨🇲'},
-  {dial:'+1',flag:'🇨🇦'},{dial:'+238',flag:'🇨🇻'},{dial:'+236',flag:'🇨🇫'},
-  {dial:'+235',flag:'🇹🇩'},{dial:'+56',flag:'🇨🇱'},{dial:'+86',flag:'🇨🇳'},
-  {dial:'+57',flag:'🇨🇴'},{dial:'+269',flag:'🇰🇲'},{dial:'+242',flag:'🇨🇬'},
-  {dial:'+506',flag:'🇨🇷'},{dial:'+385',flag:'🇭🇷'},{dial:'+53',flag:'🇨🇺'},
-  {dial:'+357',flag:'🇨🇾'},{dial:'+420',flag:'🇨🇿'},{dial:'+45',flag:'🇩🇰'},
-  {dial:'+253',flag:'🇩🇯'},{dial:'+1',flag:'🇩🇴'},{dial:'+593',flag:'🇪🇨'},
-  {dial:'+20',flag:'🇪🇬'},{dial:'+503',flag:'🇸🇻'},{dial:'+240',flag:'🇬🇶'},
-  {dial:'+291',flag:'🇪🇷'},{dial:'+372',flag:'🇪🇪'},{dial:'+268',flag:'🇸🇿'},
-  {dial:'+251',flag:'🇪🇹'},{dial:'+679',flag:'🇫🇯'},{dial:'+358',flag:'🇫🇮'},
-  {dial:'+33',flag:'🇫🇷'},{dial:'+241',flag:'🇬🇦'},{dial:'+220',flag:'🇬🇲'},
-  {dial:'+995',flag:'🇬🇪'},{dial:'+49',flag:'🇩🇪'},{dial:'+233',flag:'🇬🇭'},
-  {dial:'+30',flag:'🇬🇷'},{dial:'+502',flag:'🇬🇹'},{dial:'+224',flag:'🇬🇳'},
-  {dial:'+245',flag:'🇬🇼'},{dial:'+592',flag:'🇬🇾'},{dial:'+509',flag:'🇭🇹'},
-  {dial:'+504',flag:'🇭🇳'},{dial:'+852',flag:'🇭🇰'},{dial:'+36',flag:'🇭🇺'},
-  {dial:'+354',flag:'🇮🇸'},{dial:'+91',flag:'🇮🇳'},{dial:'+62',flag:'🇮🇩'},
-  {dial:'+98',flag:'🇮🇷'},{dial:'+964',flag:'🇮🇶'},{dial:'+353',flag:'🇮🇪'},
-  {dial:'+972',flag:'🇮🇱'},{dial:'+39',flag:'🇮🇹'},{dial:'+1',flag:'🇯🇲'},
-  {dial:'+81',flag:'🇯🇵'},{dial:'+962',flag:'🇯🇴'},{dial:'+7',flag:'🇰🇿'},
-  {dial:'+254',flag:'🇰🇪'},{dial:'+686',flag:'🇰🇮'},{dial:'+850',flag:'🇰🇵'},
-  {dial:'+82',flag:'🇰🇷'},{dial:'+965',flag:'🇰🇼'},{dial:'+996',flag:'🇰🇬'},
-  {dial:'+856',flag:'🇱🇦'},{dial:'+371',flag:'🇱🇻'},{dial:'+961',flag:'🇱🇧'},
-  {dial:'+266',flag:'🇱🇸'},{dial:'+231',flag:'🇱🇷'},{dial:'+218',flag:'🇱🇾'},
-  {dial:'+423',flag:'🇱🇮'},{dial:'+370',flag:'🇱🇹'},{dial:'+352',flag:'🇱🇺'},
-  {dial:'+853',flag:'🇲🇴'},{dial:'+261',flag:'🇲🇬'},{dial:'+265',flag:'🇲🇼'},
-  {dial:'+60',flag:'🇲🇾'},{dial:'+960',flag:'🇲🇻'},{dial:'+223',flag:'🇲🇱'},
-  {dial:'+356',flag:'🇲🇹'},{dial:'+692',flag:'🇲🇭'},{dial:'+222',flag:'🇲🇷'},
-  {dial:'+230',flag:'🇲🇺'},{dial:'+52',flag:'🇲🇽'},{dial:'+691',flag:'🇫🇲'},
-  {dial:'+373',flag:'🇲🇩'},{dial:'+377',flag:'🇲🇨'},{dial:'+976',flag:'🇲🇳'},
-  {dial:'+382',flag:'🇲🇪'},{dial:'+212',flag:'🇲🇦'},{dial:'+258',flag:'🇲🇿'},
-  {dial:'+264',flag:'🇳🇦'},{dial:'+674',flag:'🇳🇷'},{dial:'+977',flag:'🇳🇵'},
-  {dial:'+31',flag:'🇳🇱'},{dial:'+64',flag:'🇳🇿'},{dial:'+505',flag:'🇳🇮'},
-  {dial:'+227',flag:'🇳🇪'},{dial:'+234',flag:'🇳🇬'},{dial:'+389',flag:'🇲🇰'},
-  {dial:'+47',flag:'🇳🇴'},{dial:'+968',flag:'🇴🇲'},{dial:'+92',flag:'🇵🇰'},
-  {dial:'+680',flag:'🇵🇼'},{dial:'+970',flag:'🇵🇸'},{dial:'+507',flag:'🇵🇦'},
-  {dial:'+675',flag:'🇵🇬'},{dial:'+595',flag:'🇵🇾'},{dial:'+51',flag:'🇵🇪'},
-  {dial:'+63',flag:'🇵🇭'},{dial:'+48',flag:'🇵🇱'},{dial:'+351',flag:'🇵🇹'},
-  {dial:'+974',flag:'🇶🇦'},{dial:'+40',flag:'🇷🇴'},{dial:'+7',flag:'🇷🇺'},
-  {dial:'+250',flag:'🇷🇼'},{dial:'+685',flag:'🇼🇸'},{dial:'+378',flag:'🇸🇲'},
-  {dial:'+239',flag:'🇸🇹'},{dial:'+966',flag:'🇸🇦'},{dial:'+221',flag:'🇸🇳'},
-  {dial:'+381',flag:'🇷🇸'},{dial:'+232',flag:'🇸🇱'},{dial:'+65',flag:'🇸🇬'},
-  {dial:'+421',flag:'🇸🇰'},{dial:'+386',flag:'🇸🇮'},{dial:'+677',flag:'🇸🇧'},
-  {dial:'+252',flag:'🇸🇴'},{dial:'+27',flag:'🇿🇦'},{dial:'+211',flag:'🇸🇸'},
-  {dial:'+34',flag:'🇪🇸'},{dial:'+94',flag:'🇱🇰'},{dial:'+249',flag:'🇸🇩'},
-  {dial:'+597',flag:'🇸🇷'},{dial:'+46',flag:'🇸🇪'},{dial:'+41',flag:'🇨🇭'},
-  {dial:'+963',flag:'🇸🇾'},{dial:'+886',flag:'🇹🇼'},{dial:'+992',flag:'🇹🇯'},
-  {dial:'+255',flag:'🇹🇿'},{dial:'+66',flag:'🇹🇭'},{dial:'+670',flag:'🇹🇱'},
-  {dial:'+228',flag:'🇹🇬'},{dial:'+676',flag:'🇹🇴'},{dial:'+1',flag:'🇹🇹'},
-  {dial:'+216',flag:'🇹🇳'},{dial:'+90',flag:'🇹🇷'},{dial:'+993',flag:'🇹🇲'},
-  {dial:'+256',flag:'🇺🇬'},{dial:'+380',flag:'🇺🇦'},{dial:'+971',flag:'🇦🇪'},
-  {dial:'+44',flag:'🇬🇧'},{dial:'+1',flag:'🇺🇸'},{dial:'+598',flag:'🇺🇾'},
-  {dial:'+998',flag:'🇺🇿'},{dial:'+678',flag:'🇻🇺'},{dial:'+58',flag:'🇻🇪'},
-  {dial:'+84',flag:'🇻🇳'},{dial:'+967',flag:'🇾🇪'},{dial:'+260',flag:'🇿🇲'},
-  {dial:'+263',flag:'🇿🇼'},
-].sort((a,b)=>a.flag.localeCompare(b.flag))
 
 export default function LandingPage() {
   const [step, setStep] = useState('home')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [otp, setOtp] = useState('')
   const [referral, setReferral] = useState('')
-  const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [msgOk, setMsgOk] = useState(false)
@@ -106,17 +39,7 @@ export default function LandingPage() {
   const [demoTyping, setDemoTyping] = useState<number|null>(null)
   const [typedText, setTypedText] = useState('')
   const [scrollY, setScrollY] = useState(0)
-  const [countryCode, setCountryCode] = useState('+254')
-  const [countryFlag, setCountryFlag] = useState('🇰🇪')
-  const [countryOpen, setCountryOpen] = useState(false)
 
-  useEffect(() => {
-    if (!countryOpen) return
-    const close = () => setCountryOpen(false)
-    window.addEventListener('click', close)
-    return () => window.removeEventListener('click', close)
-  }, [countryOpen])
-  const [phoneLocal, setPhoneLocal] = useState('')
   const [reviewFeedback, setReviewFeedback] = useState({stars:0,text:'',name:'',role:''})
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
   const reviewsRef = useRef<HTMLDivElement>(null)
@@ -145,41 +68,15 @@ export default function LandingPage() {
     return () => cancelAnimationFrame(frame)
   }, [])
 
-  async function sendOtp() {
-    const fullPhone = countryCode + phoneLocal
-    if (!phoneLocal || phoneLocal.length < 6) { setMsg('Enter your phone number'); setMsgOk(false); return }
-    setPhone(fullPhone)
-    setLoading(true); setMsg('')
-    try {
-      const r = await fetch(API + '/api/auth/send-otp', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ phone: fullPhone })
-      })
-      const d = await r.json()
-      if (d.success) { setOtpSent(true); setMsg('OTP sent to ' + fullPhone); setMsgOk(true) }
-      else { setMsg(d.error || 'Failed to send OTP'); setMsgOk(false) }
-    } catch { setMsg('Connection error'); setMsgOk(false) }
-    setLoading(false)
-  }
+
 
   async function handleSignup() {
-    if (!email) { setMsg('Email is required'); setMsgOk(false); return }
-    const fullPhone = countryCode + phoneLocal
-    if (step === 'signup' && !phoneLocal) { setMsg('Phone is required'); setMsgOk(false); return }
-    if (step === 'signup' && otpSent && !otp) { setMsg('Please enter the OTP'); setMsgOk(false); return }
+    if (!email || !email.includes('@')) { setMsg('Valid email is required'); setMsgOk(false); return }
     setLoading(true); setMsg('')
     try {
-      if (step === 'signup' && otpSent) {
-        const v = await fetch(API + '/api/auth/verify-otp', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ phone: fullPhone, otp, email })
-        })
-        const vd = await v.json()
-        if (!vd.success) { setMsg(vd.error || 'Invalid OTP'); setMsgOk(false); setLoading(false); return }
-      }
       const r = await fetch(API + '/api/auth/magic-link', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ email, phone: fullPhone, referralCode: referral || undefined })
+        body: JSON.stringify({ email, referralCode: referral || undefined })
       })
       const d = await r.json()
       if (d.success) setStep('sent')
@@ -641,7 +538,7 @@ export default function LandingPage() {
                 {step==='forgot'?'Reset Access':step==='login'?'Welcome back':'Create your account'}
               </h2>
               <p style={{color:'#71767b',margin:0,fontSize:'12px',fontFamily:'sans-serif'}}>
-                {step==='forgot'?'Enter your email — we will send a new link':'7 days free. No credit card needed.'}
+                {step==='forgot'?'Enter your email — we will send a new link':'7 days free. No credit card. No phone needed.'}
               </p>
             </div>
 
@@ -657,70 +554,6 @@ export default function LandingPage() {
             </div>
 
             {step==='signup'&&(<>
-              {/* Phone — Flag button + Combined dial code and number */}
-              <div style={{marginBottom:'10px'}}>
-                <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Phone Number</label>
-                <div style={{display:'flex',gap:'6px',marginBottom:'4px'}}>
-
-                  {/* Flag button with dropdown */}
-                  <div style={{position:'relative',flexShrink:0}}>
-                    <button type="button" onClick={e=>{e.stopPropagation();setCountryOpen(o=>!o)}}
-                      style={{width:'52px',height:'46px',background:'#06060f',border:`1px solid ${countryOpen?'rgba(168,85,247,0.4)':'rgba(255,255,255,0.07)'}`,borderRadius:'8px',fontSize:'24px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',outline:'none',transition:'border-color 0.2s'}}>
-                      {countryFlag}
-                    </button>
-                    {countryOpen&&(
-                      <div style={{position:'absolute',top:'52px',left:0,zIndex:999,background:'#0a0a14',border:'1px solid rgba(168,85,247,0.2)',borderRadius:'10px',padding:'8px',display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'3px',width:'228px',maxHeight:'240px',overflowY:'auto',boxShadow:'0 16px 48px rgba(0,0,0,0.7)'}}>
-                        {COUNTRY_CODES.map((c,i)=>(
-                          <button key={i} type="button"
-                            onClick={e=>{e.stopPropagation();setCountryCode(c.dial);setCountryFlag(c.flag);setCountryOpen(false)}}
-                            title={c.dial}
-                            style={{fontSize:'22px',padding:'5px',background:countryCode===c.dial?'rgba(168,85,247,0.2)':'transparent',border:'none',borderRadius:'6px',cursor:'pointer',lineHeight:1,display:'flex',alignItems:'center',justifyContent:'center'}}
-                            onMouseEnter={e=>{(e.currentTarget as any).style.background='rgba(168,85,247,0.12)'}}
-                            onMouseLeave={e=>{(e.currentTarget as any).style.background=countryCode===c.dial?'rgba(168,85,247,0.2)':'transparent'}}>
-                            {c.flag}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Combined box: static dial code + number input */}
-                  <div style={{flex:1,display:'flex',alignItems:'center',background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',overflow:'hidden',transition:'border-color 0.2s'}}
-                    onFocusCapture={e=>{(e.currentTarget as HTMLDivElement).style.borderColor='rgba(168,85,247,0.4)'}}
-                    onBlurCapture={e=>{(e.currentTarget as HTMLDivElement).style.borderColor='rgba(255,255,255,0.07)'}}>
-                    <span style={{padding:'0 8px 0 14px',color:'#a855f7',fontSize:'13px',fontWeight:'700',fontFamily:'sans-serif',whiteSpace:'nowrap' as any,flexShrink:0}}>
-                      {countryCode}
-                    </span>
-                    <span style={{color:'rgba(255,255,255,0.15)',fontSize:'16px',flexShrink:0}}>|</span>
-                    <input type="tel" value={phoneLocal}
-                      onChange={e=>setPhoneLocal(e.target.value.replace(/\D/g,''))}
-                      placeholder="— — — — — — — —"
-                      maxLength={12}
-                      style={{flex:1,background:'transparent',border:'none',padding:'11px 12px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',letterSpacing:'2px',minWidth:0}} />
-                  </div>
-
-                  {/* Send OTP button */}
-                  <button onClick={sendOtp} disabled={loading||otpSent||!phoneLocal}
-                    style={{padding:'11px 12px',background:otpSent?'rgba(34,197,94,0.08)':'rgba(124,58,237,0.12)',border:`1px solid ${otpSent?'rgba(34,197,94,0.25)':'rgba(124,58,237,0.25)'}`,borderRadius:'8px',color:otpSent?'#22c55e':'#a855f7',cursor:otpSent||!phoneLocal?'not-allowed':'pointer',fontFamily:'sans-serif',fontSize:'11px',fontWeight:'600',whiteSpace:'nowrap' as any,flexShrink:0}}>
-                    {otpSent?'✓ Sent':'Send OTP'}
-                  </button>
-                </div>
-                <div style={{fontSize:'10px',marginTop:'3px',fontFamily:'sans-serif',color:otpSent?'#22c55e':'#444460'}}>
-                  {otpSent?`✓ Code sent to ${countryCode}${phoneLocal}`:'One account per phone number'}
-                </div>
-              </div>
-
-              {/* OTP input */}
-              {otpSent&&(
-                <div style={{marginBottom:'10px'}}>
-                  <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Verification Code</label>
-                  <input type="text" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,''))} placeholder="_ _ _ _ _ _" maxLength={6}
-                    style={{width:'100%',background:'#06060f',border:'1px solid rgba(34,197,94,0.25)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'22px',fontFamily:'monospace',outline:'none',boxSizing:'border-box' as any,letterSpacing:'12px',textAlign:'center',transition:'border-color 0.2s'}}
-                    onFocus={e=>{e.target.style.borderColor='rgba(34,197,94,0.5)'}}
-                    onBlur={e=>{e.target.style.borderColor='rgba(34,197,94,0.25)'}} />
-                </div>
-              )}
-
               {/* Referral */}
               <div style={{marginBottom:'14px'}}>
                 <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Referral Code (optional)</label>
