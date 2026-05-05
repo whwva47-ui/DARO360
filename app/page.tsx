@@ -1,213 +1,192 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { 
-  MessageSquare, 
-  Sparkles, 
-  Zap, 
-  Rocket,
-  Check,
-  Shield,
-  ChevronRight
-} from "lucide-react"
+'use client'
+import { useState } from 'react'
 
-export default function Home() {
-  const features = [
-    "Unlimited AI replies, openers and reactivations daily",
-    "PPV Upsell Builder to turn fans into buyers",
-    "Conversation History to track and build on past chats",
-    "Higher quality AI model reserved for Pro members only",
-    "Access to the Chrome extension for direct typing",
-  ]
+const SITE = 'https://cic-backend-b1ej.vercel.app'
+
+export default function LandingPage() {
+  const [step, setStep] = useState('home')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [referral, setReferral] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  async function handleSignup() {
+    if (!email || !phone) { setMsg('Email and phone are required'); return }
+    setLoading(true)
+    setMsg('')
+    try {
+      const r = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, phone, referralCode: referral || undefined })
+      })
+      const d = await r.json()
+      if (d.success) setStep('sent')
+      else setMsg(d.error || 'Something went wrong')
+    } catch(e) {
+      setMsg('Connection error. Please try again.')
+    }
+    setLoading(false)
+  }
+
+  if (step === 'sent') return (
+    <div style={{minHeight:'100vh',background:'#080810',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'sans-serif'}}>
+      <div style={{textAlign:'center',padding:'40px',maxWidth:'440px'}}>
+        <div style={{fontSize:'56px',marginBottom:'16px'}}>📧</div>
+        <h2 style={{color:'#a855f7',marginBottom:'12px'}}>Check Your Email</h2>
+        <p style={{color:'#71767b',lineHeight:'1.6'}}>We sent a magic link to <b style={{color:'#e2e8f0'}}>{email}</b>. Click it to sign in. Expires in 1 hour.</p>
+        <button onClick={()=>setStep('home')} style={{marginTop:'24px',padding:'10px 24px',background:'transparent',border:'1px solid #1e1e32',borderRadius:'8px',color:'#71767b',cursor:'pointer',fontFamily:'sans-serif'}}>← Back</button>
+      </div>
+    </div>
+  )
+
+  if (step === 'signup') return (
+    <div style={{minHeight:'100vh',background:'#080810',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'sans-serif'}}>
+      <div style={{width:'100%',maxWidth:'400px',padding:'32px 24px'}}>
+        <div style={{textAlign:'center',marginBottom:'28px'}}>
+          <div style={{width:'52px',height:'52px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',borderRadius:'14px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'24px',marginBottom:'12px'}}>💬</div>
+          <h2 style={{color:'#a855f7',margin:'0 0 4px',fontSize:'20px'}}>Create Your Account</h2>
+          <p style={{color:'#71767b',margin:0,fontSize:'13px'}}>3 days unlimited free. No credit card.</p>
+        </div>
+
+        {[
+          {label:'Email Address',type:'email',val:email,set:setEmail,ph:'you@example.com',note:''},
+          {label:'Phone Number (with country code)',type:'tel',val:phone,set:setPhone,ph:'+254712345678',note:'Required to prevent duplicate accounts'},
+          {label:'Referral Code (optional)',type:'text',val:referral,set:setReferral,ph:'Enter referral code',note:''},
+        ].map(f => (
+          <div key={f.label} style={{marginBottom:'14px'}}>
+            <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.5px'}}>{f.label}</label>
+            <input type={f.type} value={f.val} onChange={e=>f.set(e.target.value)} placeholder={f.ph}
+              style={{width:'100%',background:'#0f0f1a',border:'1px solid #1e1e32',borderRadius:'7px',padding:'10px 12px',color:'#e2e8f0',fontSize:'13px',boxSizing:'border-box' as any,outline:'none',fontFamily:'sans-serif'}} />
+            {f.note && <div style={{fontSize:'10px',color:'#444460',marginTop:'3px'}}>{f.note}</div>}
+          </div>
+        ))}
+
+        {msg && <div style={{color:'#f43f5e',fontSize:'12px',marginBottom:'12px'}}>{msg}</div>}
+
+        <button onClick={handleSignup} disabled={loading}
+          style={{width:'100%',padding:'12px',background:'linear-gradient(135deg,#7c3aed,#9333ea,#d4a300)',border:'none',borderRadius:'8px',color:'#fff',fontSize:'14px',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif',opacity:loading?0.7:1}}>
+          {loading ? 'Sending...' : 'Send Magic Link →'}
+        </button>
+
+        <p style={{textAlign:'center',fontSize:'11px',color:'#444460',marginTop:'14px'}}>One account per person. Phone required.</p>
+        <button onClick={()=>setStep('home')} style={{display:'block',margin:'8px auto 0',background:'none',border:'none',color:'#444460',cursor:'pointer',fontSize:'12px',fontFamily:'sans-serif'}}>← Back to home</button>
+      </div>
+    </div>
+  )
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-background to-amber-900/10"></div>
-        <div className="relative mx-auto max-w-4xl px-4 py-16 text-center">
-          {/* Logo */}
-          <div className="mb-8 inline-flex flex-col items-center justify-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-amber-500">
-              <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
+    <div style={{minHeight:'100vh',background:'#080810',color:'#e2e8f0',fontFamily:'sans-serif'}}>
+
+      {/* Nav */}
+      <div style={{padding:'14px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #1e1e32',position:'sticky',top:0,background:'#080810',zIndex:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+          <div style={{width:'34px',height:'34px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',borderRadius:'9px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px'}}>💬</div>
+          <div>
+            <div style={{fontWeight:'700',fontSize:'13px',background:'linear-gradient(135deg,#a855f7,#fbbf24)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Chatter's Inner Circle</div>
+            <div style={{fontSize:'10px',color:'#444460'}}>AI Reply Assistant</div>
+          </div>
+        </div>
+        <button onClick={()=>setStep('signup')} style={{padding:'8px 18px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'7px',color:'#fff',fontWeight:'600',cursor:'pointer',fontSize:'12px',fontFamily:'sans-serif'}}>
+          Get Started
+        </button>
+      </div>
+
+      {/* Hero */}
+      <div style={{maxWidth:'680px',margin:'0 auto',padding:'70px 24px 40px',textAlign:'center'}}>
+        <div style={{display:'inline-block',padding:'5px 14px',background:'rgba(124,58,237,0.15)',border:'1px solid rgba(124,58,237,0.3)',borderRadius:'20px',fontSize:'11px',color:'#a855f7',marginBottom:'18px'}}>
+          AI Reply Assistant for Dating Platforms
+        </div>
+        <h1 style={{fontSize:'clamp(26px,5vw,46px)',fontWeight:'800',margin:'0 0 14px',lineHeight:'1.2'}}>
+          Replies That Get Him
+          <span style={{display:'block',background:'linear-gradient(135deg,#a855f7,#fbbf24)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+            Hooked Every Time
+          </span>
+        </h1>
+        <p style={{fontSize:'15px',color:'#71767b',lineHeight:'1.6',maxWidth:'480px',margin:'0 auto 28px'}}>
+          CIC generates smart, warm replies for women on dating platforms. Works on Texting Factory, Alpha.date, OnlyFans, Fansly, and more.
+        </p>
+        <button onClick={()=>setStep('signup')} style={{padding:'13px 32px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'9px',color:'#fff',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:'0 4px 20px rgba(124,58,237,0.35)',fontFamily:'sans-serif'}}>
+          Start Free — 3 Days Unlimited
+        </button>
+      </div>
+
+      {/* Extensions */}
+      <div style={{maxWidth:'680px',margin:'0 auto',padding:'0 24px 60px'}}>
+        <h2 style={{textAlign:'center',color:'#fbbf24',marginBottom:'18px',fontSize:'18px'}}>Download Extensions</h2>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px'}}>
+          {[
+            {name:'CIC — Texting Factory',desc:'chathomebase.com & Texting Factory',icon:'💬'},
+            {name:'CIC — General Platforms',desc:'Alpha.date, OnlyFans, Fansly & more',icon:'🌐'}
+          ].map(e => (
+            <div key={e.name} style={{background:'#0f0f1a',border:'1px solid #1e1e32',borderRadius:'10px',padding:'20px',textAlign:'center'}}>
+              <div style={{fontSize:'28px',marginBottom:'8px'}}>{e.icon}</div>
+              <div style={{fontWeight:'600',fontSize:'13px',marginBottom:'5px'}}>{e.name}</div>
+              <div style={{color:'#71767b',fontSize:'11px',marginBottom:'12px'}}>{e.desc}</div>
+              <button onClick={()=>setStep('signup')} style={{padding:'7px 16px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'6px',color:'#fff',fontSize:'11px',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif'}}>
+                Sign Up to Download
+              </button>
             </div>
-            <h1 className="bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-3xl font-bold text-transparent">
-              Chatter&apos;s Inner Circle
-            </h1>
-          </div>
-
-          <p className="mx-auto mb-8 max-w-xl text-lg text-muted-foreground">
-            The AI-powered assistant for professional chatters. Generate engaging replies, 
-            reactivation messages, and openers in seconds.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="mx-auto mb-8 flex max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link href="/auth/login" className="flex-1 sm:flex-none">
-              <Button size="lg" className="w-full gap-2 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600">
-                Sign In
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/auth/sign-up" className="flex-1 sm:flex-none">
-              <Button size="lg" variant="outline" className="w-full gap-2">
-                Create Account
-              </Button>
-            </Link>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            By signing up you agree to use AI-generated replies responsibly. 
-            Always proofread before sending and ensure replies follow your platform guidelines.
-          </p>
+          ))}
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="border-t border-border bg-card/50">
-        <div className="mx-auto max-w-5xl px-4 py-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-foreground">
-            Everything you need to chat faster
-          </h2>
-          
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="mb-4 inline-flex rounded-lg bg-purple-500/10 p-3">
-                <MessageSquare className="h-6 w-6 text-purple-400" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-foreground">Chat Agent</h3>
-              <p className="text-sm text-muted-foreground">
-                Get instant reply suggestions for any subscriber situation. Copy, paste, convert.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="mb-4 inline-flex rounded-lg bg-amber-500/10 p-3">
-                <Zap className="h-6 w-6 text-amber-500" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-foreground">Reactivation Messages</h3>
-              <p className="text-sm text-muted-foreground">
-                Wake up cold users with messages designed to pull them back into the conversation.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="mb-4 inline-flex rounded-lg bg-green-500/10 p-3">
-                <Rocket className="h-6 w-6 text-green-500" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-foreground">Opener Generator</h3>
-              <p className="text-sm text-muted-foreground">
-                Generate compelling first messages that start conversations on the right note.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pro Comparison */}
-      <div className="border-t border-border">
-        <div className="mx-auto max-w-4xl px-4 py-16">
-          <h2 className="mb-8 text-center text-2xl font-bold text-foreground">
-            See the difference
-          </h2>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <span className="mb-3 inline-block rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                Free reply
-              </span>
-              <p className="text-sm text-muted-foreground">
-                Hey, glad you reached out! What have you been up to today?
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-6">
-              <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/20 to-amber-500/20 px-3 py-1 text-xs font-medium text-purple-400">
-                <Sparkles className="h-3 w-3" />
-                Pro reply
-              </span>
-              <p className="text-sm text-foreground">
-                Something about the way you said that made me stop scrolling. I feel like there is a whole story behind those words. What is really going on with you today?
-              </p>
-            </div>
-          </div>
-
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Same message. Completely different result.
-          </p>
-        </div>
-      </div>
-
-      {/* Pro Features */}
-      <div className="border-t border-border bg-card/50">
-        <div className="mx-auto max-w-3xl px-4 py-16">
-          <div className="rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-amber-900/10 p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <Sparkles className="h-8 w-8 text-amber-400" />
-              <h2 className="text-2xl font-bold text-foreground">Pro Features</h2>
-            </div>
-            
-            <ul className="mb-8 space-y-3">
-              {features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-purple-400" />
-                  <span className="text-sm text-foreground">{feature}</span>
-                </li>
+      {/* Plans */}
+      <div style={{maxWidth:'780px',margin:'0 auto',padding:'0 24px 70px'}}>
+        <h2 style={{textAlign:'center',marginBottom:'28px',fontSize:'18px'}}>Simple Pricing</h2>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:'14px'}}>
+          {[
+            {name:'Free Trial',price:'Free',period:'3 days',color:'#71767b',badge:'',features:['Unlimited replies days 1-3','Reducing limits days 4-7','Both extensions included','All platforms supported']},
+            {name:'Basic',price:'Free',period:'after trial',color:'#60a5fa',badge:'',features:['50 messages per 4 days','Standard AI quality','Both extensions','Email support']},
+            {name:'Pro',price:'$15',period:'per month',color:'#a855f7',badge:'BEST',features:['Unlimited messages','Premium AI quality','Admin approved','Referral rewards','Priority support']},
+          ].map(p => (
+            <div key={p.name} style={{background:'#0f0f1a',border:`1px solid ${p.name==='Pro'?'rgba(168,85,247,0.4)':'#1e1e32'}`,borderRadius:'10px',padding:'22px',position:'relative'}}>
+              {p.badge && <div style={{position:'absolute',top:'10px',right:'10px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',padding:'2px 8px',borderRadius:'10px',fontSize:'9px',fontWeight:'700',color:'#fff'}}>{p.badge}</div>}
+              <div style={{color:p.color,fontWeight:'700',marginBottom:'6px',fontSize:'13px'}}>{p.name}</div>
+              <div style={{fontSize:'26px',fontWeight:'800',marginBottom:'3px'}}>{p.price}</div>
+              <div style={{color:'#444460',fontSize:'11px',marginBottom:'18px'}}>{p.period}</div>
+              {p.features.map(f => (
+                <div key={f} style={{display:'flex',gap:'7px',marginBottom:'7px',fontSize:'12px',color:'#71767b',alignItems:'flex-start'}}>
+                  <span style={{color:p.color,flexShrink:0}}>✓</span>{f}
+                </div>
               ))}
-            </ul>
-
-            <Link href="/auth/sign-up">
-              <Button size="lg" className="w-full bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-700 hover:to-amber-600 sm:w-auto">
-                Get Started Free
-              </Button>
-            </Link>
-          </div>
+              <button onClick={()=>setStep('signup')} style={{width:'100%',marginTop:'14px',padding:'9px',background:p.name==='Pro'?'linear-gradient(135deg,#7c3aed,#d4a300)':'transparent',border:`1px solid ${p.color}`,borderRadius:'6px',color:p.name==='Pro'?'#fff':p.color,cursor:'pointer',fontWeight:'600',fontSize:'12px',fontFamily:'sans-serif'}}>
+                {p.name==='Pro'?'Get Pro':'Get Started'}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Guidelines */}
-      <div className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-4 py-16">
-          <div className="rounded-xl border border-border bg-card p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <Shield className="h-6 w-6 text-muted-foreground" />
-              <h2 className="text-xl font-bold text-foreground">Use AI Responsibly</h2>
-            </div>
-            
-            <ul className="space-y-4 text-sm text-muted-foreground">
-              <li className="flex gap-3">
-                <span className="font-semibold text-foreground">1.</span>
-                <span><strong className="text-foreground">Always proofread before sending.</strong> AI suggestions are a starting point, not a final message.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-foreground">2.</span>
-                <span><strong className="text-foreground">Follow your platform rules.</strong> Ensure every reply complies with your platform&apos;s terms of service.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-foreground">3.</span>
-                <span><strong className="text-foreground">Use your judgment.</strong> If a suggestion does not feel right, do not use it.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-foreground">4.</span>
-                <span><strong className="text-foreground">Never send harmful content.</strong> Do not use AI to violate rules or harass users.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-foreground">5.</span>
-                <span><strong className="text-foreground">You are responsible.</strong> Chatter&apos;s Inner Circle provides suggestions only. You are fully responsible for every message you send.</span>
-              </li>
-            </ul>
-          </div>
+      {/* Referral */}
+      <div style={{maxWidth:'560px',margin:'0 auto',padding:'0 24px 70px',textAlign:'center'}}>
+        <div style={{background:'rgba(234,179,8,0.08)',border:'1px solid rgba(234,179,8,0.2)',borderRadius:'12px',padding:'28px'}}>
+          <div style={{fontSize:'30px',marginBottom:'10px'}}>🎁</div>
+          <h3 style={{color:'#fbbf24',marginBottom:'10px',fontSize:'16px'}}>Refer Friends, Earn Pro Free</h3>
+          <p style={{color:'#71767b',fontSize:'13px',lineHeight:'1.6',margin:'0 0 12px'}}>
+            Every referral earns <b style={{color:'#fbbf24'}}>150 points</b>. Collect <b style={{color:'#fbbf24'}}>1,500 points</b> and get 1 month Pro free ($15 value).
+          </p>
+          <p style={{color:'#444460',fontSize:'11px',margin:0}}>Your referral code appears in the extension after signup.</p>
+        </div>
+      </div>
+
+      {/* Payment */}
+      <div style={{maxWidth:'560px',margin:'0 auto',padding:'0 24px 70px',textAlign:'center'}}>
+        <div style={{background:'rgba(124,58,237,0.05)',border:'1px solid rgba(124,58,237,0.2)',borderRadius:'12px',padding:'28px'}}>
+          <h3 style={{color:'#a855f7',marginBottom:'12px',fontSize:'16px'}}>How to Pay for Pro</h3>
+          <p style={{color:'#71767b',fontSize:'13px',lineHeight:'1.6',margin:'0 0 12px'}}>
+            Payment details are sent privately to your email when you request a Pro upgrade inside the extension. We support M-Pesa and PayPal.
+          </p>
+          <p style={{color:'#444460',fontSize:'11px',margin:0}}>Your payment information is kept strictly confidential.</p>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 text-center">
-        <p className="text-xs text-muted-foreground">
-          Chatter&apos;s Inner Circle is a professional tool designed to help chatters work more efficiently.
-        </p>
-      </footer>
-    </main>
+      <div style={{borderTop:'1px solid #111120',padding:'20px',textAlign:'center',color:'#444460',fontSize:'11px'}}>
+        <p style={{margin:'0 0 4px'}}>Chatter's Inner Circle © 2026 — AI Reply Assistant</p>
+        <p style={{margin:0}}>Support: <a href="mailto:whwva47@gmail.com" style={{color:'#a855f7',textDecoration:'none'}}>whwva47@gmail.com</a></p>
+      </div>
+    </div>
   )
 }
