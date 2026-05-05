@@ -57,7 +57,7 @@ export async function GET(req: Request) {
       }
 
       // Redirect to landing with session
-      return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/landing?auth=success`))
+      return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_SITE_URL}/?auth=success`))
     }
   }
 
