@@ -25,6 +25,29 @@ const REVIEWS = [
   { name: 'Chloe B.', role: 'Texting Factory Operator', stars: 5, text: "The quality of responses is insane. Every reply feels personal, warm, and real. My clients are more engaged than ever and tips have gone up 60%.", time: '2 weeks ago', avatar: 'CB' },
 ]
 
+const COUNTRY_CODES = [
+  {code:'KE',dial:'+254',flag:'🇰🇪',name:'Kenya'},
+  {code:'US',dial:'+1',flag:'🇺🇸',name:'United States'},
+  {code:'GB',dial:'+44',flag:'🇬🇧',name:'United Kingdom'},
+  {code:'NG',dial:'+234',flag:'🇳🇬',name:'Nigeria'},
+  {code:'ZA',dial:'+27',flag:'🇿🇦',name:'South Africa'},
+  {code:'GH',dial:'+233',flag:'🇬🇭',name:'Ghana'},
+  {code:'UG',dial:'+256',flag:'🇺🇬',name:'Uganda'},
+  {code:'TZ',dial:'+255',flag:'🇹🇿',name:'Tanzania'},
+  {code:'ET',dial:'+251',flag:'🇪🇹',name:'Ethiopia'},
+  {code:'CA',dial:'+1',flag:'🇨🇦',name:'Canada'},
+  {code:'AU',dial:'+61',flag:'🇦🇺',name:'Australia'},
+  {code:'DE',dial:'+49',flag:'🇩🇪',name:'Germany'},
+  {code:'FR',dial:'+33',flag:'🇫🇷',name:'France'},
+  {code:'IN',dial:'+91',flag:'🇮🇳',name:'India'},
+  {code:'PH',dial:'+63',flag:'🇵🇭',name:'Philippines'},
+  {code:'ZM',dial:'+260',flag:'🇿🇲',name:'Zambia'},
+  {code:'ZW',dial:'+263',flag:'🇿🇼',name:'Zimbabwe'},
+  {code:'RW',dial:'+250',flag:'🇷🇼',name:'Rwanda'},
+  {code:'SN',dial:'+221',flag:'🇸🇳',name:'Senegal'},
+  {code:'CM',dial:'+237',flag:'🇨🇲',name:'Cameroon'},
+]
+
 export default function LandingPage() {
   const [step, setStep] = useState('home')
   const [email, setEmail] = useState('')
@@ -41,6 +64,8 @@ export default function LandingPage() {
   const [demoTyping, setDemoTyping] = useState<number|null>(null)
   const [typedText, setTypedText] = useState('')
   const [scrollY, setScrollY] = useState(0)
+  const [countryCode, setCountryCode] = useState('+254')
+  const [phoneLocal, setPhoneLocal] = useState('')
   const [reviewFeedback, setReviewFeedback] = useState({stars:0,text:'',name:'',role:''})
   const [reviewSubmitted, setReviewSubmitted] = useState(false)
   const reviewsRef = useRef<HTMLDivElement>(null)
@@ -106,6 +131,21 @@ export default function LandingPage() {
       if (d.success) setStep('sent')
       else { setMsg(d.error || 'Something went wrong'); setMsgOk(false) }
     } catch { setMsg('Connection error. Please try again.'); setMsgOk(false) }
+    setLoading(false)
+  }
+
+  async function handleForgot() {
+    if (!email) { setMsg('Email is required'); setMsgOk(false); return }
+    setLoading(true); setMsg('')
+    try {
+      const r = await fetch(API + '/api/auth/magic-link', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email })
+      })
+      const d = await r.json()
+      if (d.success) { setMsg('Sign-in link sent. Check your email.'); setMsgOk(true) }
+      else { setMsg(d.error || 'Something went wrong'); setMsgOk(false) }
+    } catch { setMsg('Connection error'); setMsgOk(false) }
     setLoading(false)
   }
 
@@ -536,52 +576,71 @@ export default function LandingPage() {
       </div>
 
       {/* Signup/Login Modal */}
-      {(step==='signup'||step==='login')&&(
+      {(step==='signup'||step==='login'||step==='forgot')&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.88)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',backdropFilter:'blur(10px)'}}>
-          <div style={{width:'100%',maxWidth:'400px',background:'#0a0a14',border:'1px solid rgba(168,85,247,0.2)',borderRadius:'16px',padding:'36px',position:'relative',boxShadow:'0 32px 80px rgba(0,0,0,0.7)'}}>
+          <div style={{width:'100%',maxWidth:'400px',background:'#0a0a14',border:'1px solid rgba(168,85,247,0.2)',borderRadius:'16px',padding:'32px',position:'relative',boxShadow:'0 32px 80px rgba(0,0,0,0.7)',maxHeight:'90vh',overflowY:'auto'}}>
             <button onClick={()=>{setStep('home');setMsg('');setOtpSent(false);setOtp('')}} style={{position:'absolute',top:'14px',right:'14px',background:'none',border:'none',color:'#444460',cursor:'pointer',fontSize:'18px',lineHeight:1}}>✕</button>
-            <div style={{textAlign:'center',marginBottom:'26px'}}>
-              <div style={{width:'46px',height:'46px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',borderRadius:'12px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'22px',marginBottom:'12px'}}>💬</div>
-              <h2 style={{color:'#a855f7',margin:'0 0 4px',fontSize:'19px',fontWeight:'400',letterSpacing:'-0.5px'}}>
-                {step==='login'?'Welcome back':'Create your account'}
+
+            <div style={{textAlign:'center',marginBottom:'24px'}}>
+              <div style={{width:'44px',height:'44px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',borderRadius:'12px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'20px',marginBottom:'10px'}}>💬</div>
+              <h2 style={{color:'#a855f7',margin:'0 0 4px',fontSize:'18px',fontWeight:'400',letterSpacing:'-0.5px'}}>
+                {step==='forgot'?'Reset Access':step==='login'?'Welcome back':'Create your account'}
               </h2>
               <p style={{color:'#71767b',margin:0,fontSize:'12px',fontFamily:'sans-serif'}}>
-                {step==='login'?'Enter your email for a sign-in link':'7 days free. No credit card needed.'}
+                {step==='forgot'?'Enter your email — we will send a new link':'7 days free. No credit card needed.'}
               </p>
             </div>
 
+            {/* Email */}
             <div style={{marginBottom:'10px'}}>
               <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Email Address</label>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"
-                style={{width:'100%',background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,transition:'border-color 0.2s'}}
-                onFocus={e=>{e.target.style.borderColor='rgba(168,85,247,0.4)'}}
-                onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.07)'}} />
+              <div style={{position:'relative'}}>
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"
+                  style={{width:'100%',background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,transition:'border-color 0.2s'}}
+                  onFocus={e=>{e.target.style.borderColor='rgba(168,85,247,0.4)'}}
+                  onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.07)'}} />
+              </div>
             </div>
 
             {step==='signup'&&(<>
+              {/* Country code + Phone */}
               <div style={{marginBottom:'10px'}}>
-                <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Phone (with country code)</label>
-                <div style={{display:'flex',gap:'8px'}}>
-                  <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+254712345678"
-                    style={{flex:1,background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,transition:'border-color 0.2s'}}
+                <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Phone Number</label>
+                <div style={{display:'flex',gap:'6px'}}>
+                  <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
+                    style={{background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 8px',color:'#e2e8f0',fontSize:'12px',fontFamily:'sans-serif',outline:'none',cursor:'pointer',transition:'border-color 0.2s',minWidth:'110px'}}
+                    onFocus={e=>{e.target.style.borderColor='rgba(168,85,247,0.4)'}}
+                    onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.07)'}}>
+                    {COUNTRY_CODES.map(c=>(
+                      <option key={c.code} value={c.dial}>{c.flag} {c.code} {c.dial}</option>
+                    ))}
+                  </select>
+                  <input type="tel" value={phoneLocal} onChange={e=>setPhoneLocal(e.target.value.replace(/\D/g,''))} placeholder="712345678"
+                    style={{flex:1,background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 12px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,transition:'border-color 0.2s'}}
                     onFocus={e=>{e.target.style.borderColor='rgba(168,85,247,0.4)'}}
                     onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.07)'}} />
-                  <button onClick={sendOtp} disabled={loading||otpSent} style={{padding:'11px 12px',background:otpSent?'rgba(34,197,94,0.08)':'rgba(124,58,237,0.12)',border:`1px solid ${otpSent?'rgba(34,197,94,0.25)':'rgba(124,58,237,0.25)'}`,borderRadius:'8px',color:otpSent?'#22c55e':'#a855f7',cursor:otpSent?'default':'pointer',fontFamily:'sans-serif',fontSize:'11px',fontWeight:'600',whiteSpace:'nowrap' as any,transition:'all 0.2s'}}>
-                    {otpSent?'✓ Sent':'Send OTP'}
+                  <button onClick={()=>{setPhone(countryCode+phoneLocal);sendOtp()}} disabled={loading||otpSent||!phoneLocal}
+                    style={{padding:'11px 10px',background:otpSent?'rgba(34,197,94,0.08)':'rgba(124,58,237,0.12)',border:`1px solid ${otpSent?'rgba(34,197,94,0.25)':'rgba(124,58,237,0.25)'}`,borderRadius:'8px',color:otpSent?'#22c55e':'#a855f7',cursor:otpSent||!phoneLocal?'not-allowed':'pointer',fontFamily:'sans-serif',fontSize:'11px',fontWeight:'600',whiteSpace:'nowrap' as any}}>
+                    {otpSent?'✓':'OTP'}
                   </button>
                 </div>
-                <div style={{fontSize:'10px',color:'#444460',marginTop:'3px',fontFamily:'sans-serif'}}>Prevents duplicate accounts</div>
+                <div style={{fontSize:'10px',color:'#444460',marginTop:'3px',fontFamily:'sans-serif'}}>One account per phone number</div>
               </div>
+
+              {/* OTP input */}
               {otpSent&&(
                 <div style={{marginBottom:'10px'}}>
-                  <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>OTP Code</label>
-                  <input type="text" value={otp} onChange={e=>setOtp(e.target.value)} placeholder="6-digit code" maxLength={6}
-                    style={{width:'100%',background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'16px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,letterSpacing:'6px',transition:'border-color 0.2s'}}
-                    onFocus={e=>{e.target.style.borderColor='rgba(168,85,247,0.4)'}}
-                    onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.07)'}} />
+                  <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Verification Code</label>
+                  <input type="text" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,''))} placeholder="Enter 6-digit code" maxLength={6}
+                    style={{width:'100%',background:'#06060f',border:'1px solid rgba(34,197,94,0.25)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'18px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,letterSpacing:'8px',textAlign:'center',transition:'border-color 0.2s'}}
+                    onFocus={e=>{e.target.style.borderColor='rgba(34,197,94,0.5)'}}
+                    onBlur={e=>{e.target.style.borderColor='rgba(34,197,94,0.25)'}} />
+                  <div style={{fontSize:'10px',color:'#22c55e',marginTop:'3px',fontFamily:'sans-serif'}}>✓ Code sent to {countryCode}{phoneLocal}</div>
                 </div>
               )}
-              <div style={{marginBottom:'16px'}}>
+
+              {/* Referral */}
+              <div style={{marginBottom:'14px'}}>
                 <label style={{display:'block',fontSize:'10px',color:'#71767b',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'1px',fontFamily:'sans-serif'}}>Referral Code (optional)</label>
                 <input type="text" value={referral} onChange={e=>setReferral(e.target.value)} placeholder="Enter referral code"
                   style={{width:'100%',background:'#06060f',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',padding:'11px 14px',color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',outline:'none',boxSizing:'border-box' as any,transition:'border-color 0.2s'}}
@@ -592,12 +651,17 @@ export default function LandingPage() {
 
             {msg&&<div style={{fontSize:'12px',marginBottom:'12px',fontFamily:'sans-serif',color:msgOk?'#22c55e':'#f43f5e',padding:'8px 12px',background:msgOk?'rgba(34,197,94,0.06)':'rgba(244,63,94,0.06)',borderRadius:'6px',border:`1px solid ${msgOk?'rgba(34,197,94,0.2)':'rgba(244,63,94,0.2)'}`}}>{msg}</div>}
 
-            <button onClick={handleSignup} disabled={loading} style={{width:'100%',padding:'12px',background:loading?'rgba(124,58,237,0.35)':'linear-gradient(135deg,#7c3aed,#9333ea,#d4a300)',border:'none',borderRadius:'9px',color:'#fff',fontSize:'14px',fontWeight:'600',cursor:loading?'not-allowed':'pointer',fontFamily:'sans-serif',transition:'all 0.2s',boxShadow:loading?'none':'0 4px 16px rgba(124,58,237,0.25)'}}>
-              {loading?'Please wait...':step==='login'?'Send Sign-in Link →':'Create Account →'}
+            <button onClick={step==='forgot'?handleForgot:handleSignup} disabled={loading}
+              style={{width:'100%',padding:'12px',background:loading?'rgba(124,58,237,0.35)':'linear-gradient(135deg,#7c3aed,#9333ea,#d4a300)',border:'none',borderRadius:'9px',color:'#fff',fontSize:'14px',fontWeight:'600',cursor:loading?'not-allowed':'pointer',fontFamily:'sans-serif',transition:'all 0.2s',boxShadow:loading?'none':'0 4px 16px rgba(124,58,237,0.25)'}}>
+              {loading?'Please wait...':step==='forgot'?'Send Reset Link →':step==='login'?'Send Sign-in Link →':'Create Account →'}
             </button>
-            <p style={{textAlign:'center',marginTop:'14px',fontSize:'11px',color:'#444460',fontFamily:'sans-serif'}}>
-              {step==='signup'?<>Have an account? <span onClick={()=>setStep('login')} style={{color:'#a855f7',cursor:'pointer'}}>Sign in</span></>:<>No account? <span onClick={()=>setStep('signup')} style={{color:'#a855f7',cursor:'pointer'}}>Create one free</span></>}
-            </p>
+
+            <div style={{textAlign:'center',marginTop:'14px',fontSize:'11px',color:'#444460',fontFamily:'sans-serif',display:'flex',flexDirection:'column',gap:'6px'}}>
+              {step==='signup'&&<span>Have an account? <span onClick={()=>setStep('login')} style={{color:'#a855f7',cursor:'pointer'}}>Sign in</span></span>}
+              {step==='login'&&<span>No account? <span onClick={()=>setStep('signup')} style={{color:'#a855f7',cursor:'pointer'}}>Create one free</span></span>}
+              {step==='login'&&<span><span onClick={()=>setStep('forgot')} style={{color:'#71767b',cursor:'pointer',textDecoration:'underline'}}>Forgot access? Send new link</span></span>}
+              {step==='forgot'&&<span><span onClick={()=>setStep('login')} style={{color:'#a855f7',cursor:'pointer'}}>← Back to sign in</span></span>}
+            </div>
           </div>
         </div>
       )}
