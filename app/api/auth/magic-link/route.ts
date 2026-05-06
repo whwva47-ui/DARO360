@@ -24,7 +24,6 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Send magic link
     const { error: authError } = await supabase.auth.signInWithOtp({
       email: email.toLowerCase().trim(),
       options: {
@@ -37,13 +36,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400, headers: cors })
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Magic link sent. Check your email.'
-    }, { headers: cors })
+    return NextResponse.json({ success: true, message: 'Magic link sent. Check your email.' }, { headers: cors })
 
   } catch (e: any) {
-    console.error('[CIC] Magic link error:', e.message)
     return NextResponse.json({ error: e.message }, { status: 500, headers: cors })
   }
 }
