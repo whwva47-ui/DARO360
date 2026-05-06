@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -14,34 +13,48 @@ export async function OPTIONS() {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const email = (body.email || '').toString().trim()
-
-    console.log('[CIC] Magic link for:', email)
+    const email = (body.email || '').toString().toLowerCase().trim()
 
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Valid email required' }, { status: 400, headers: cors })
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '')
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://chattersinnercircle.vercel.app').replace(/\/$/, '')
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chattersinnercircle.vercel.app'
+    console.log('[CIC] Sending magic link to:', email)
+    console.log('[CIC] Supabase URL:', supabaseUrl)
+    console.log('[CIC] Redirect to:', siteUrl + '/api/auth/callback')
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase(),
-      options: {
-        emailRedirectTo: `${siteUrl}/api/auth/callback`,
-      }
+    // Call Supabase Auth REST API directly — more reliable than SDK
+    const response = await fetch(`${supabaseUrl}/auth/v1/magiclink`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({
+        email,
+        redirect_to: `${siteUrl}/api/auth/callback`,
+      })
     })
 
-    if (error) {
-      console.log('[CIC] Supabase error:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 400, headers: cors })
+    const responseText = await response.text()
+    console.log('[CIC] Supabase response status:', response.status)
+    console.log('[CIC] Supabase response:', responseText.substring(0, 200))
+
+    if (!response.ok) {
+      let errMsg = 'Failed to send magic link'
+      try { errMsg = JSON.parse(responseText).msg || errMsg } catch {}
+      return NextResponse.json({ error: errMsg }, { status: 400, headers: cors })
     }
 
-    return NextResponse.json({ success: true, message: 'Check your email for a sign-in link.' }, { headers: cors })
+    return NextResponse.json({
+      success: true,
+      message: 'Magic link sent. Check your email.'
+    }, { headers: cors })
 
   } catch (e: any) {
     console.error('[CIC] Magic link error:', e.message)
