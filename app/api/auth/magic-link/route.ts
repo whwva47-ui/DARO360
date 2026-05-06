@@ -13,7 +13,10 @@ export async function OPTIONS() {
 
 export async function POST(req: Request) {
   try {
-    const { email, referralCode } = await req.json()
+    const body = await req.json()
+    const email = (body.email || '').toString().trim()
+
+    console.log('[CIC] Magic link for:', email)
 
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Valid email required' }, { status: 400, headers: cors })
@@ -24,21 +27,24 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase().trim(),
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chattersinnercircle.vercel.app'
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.toLowerCase(),
       options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
-        data: { referralCode: referralCode || null }
+        emailRedirectTo: `${siteUrl}/api/auth/callback`,
       }
     })
 
-    if (authError) {
-      return NextResponse.json({ error: authError.message }, { status: 400, headers: cors })
+    if (error) {
+      console.log('[CIC] Supabase error:', error.message)
+      return NextResponse.json({ error: error.message }, { status: 400, headers: cors })
     }
 
-    return NextResponse.json({ success: true, message: 'Magic link sent. Check your email.' }, { headers: cors })
+    return NextResponse.json({ success: true, message: 'Check your email for a sign-in link.' }, { headers: cors })
 
   } catch (e: any) {
+    console.error('[CIC] Magic link error:', e.message)
     return NextResponse.json({ error: e.message }, { status: 500, headers: cors })
   }
 }
