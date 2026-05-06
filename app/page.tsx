@@ -104,25 +104,13 @@ export default function LandingPage() {
     if (!demoMsg.trim()) return
     setDemoLoading(true); setDemoReplies([])
     try {
-      const r = await fetch(API + '/api/generate', {
-        method: 'POST', headers: {'Content-Type':'application/json','X-API-Key':'test_key'},
-        body: JSON.stringify({ message: demoMsg, pageContext: { platform: 'chathomebase' } })
-      })
-      const d = await r.json()
-      setDemoReplies(d.replies?.length ? d.replies : [
-        { tone: 'Flirty', text: "That caught me off guard in the best way. You have a habit of saying exactly what I didn't know I needed to hear — what else are you holding back?" },
-        { tone: 'Playful', text: "Okay you can't just say something like that and leave me hanging. Tell me more, I want the full story." },
-        { tone: 'Warm', text: "That honestly made me smile. I feel like you actually get me, which doesn't happen often. What made you think to say that?" },
-        { tone: 'Confident', text: "Bold. I respect it. Now tell me — is that how you are with everyone or am I special?" },
-      ])
-    } catch {
+      // Static demo — direct to signup for real replies
       setDemoReplies([
         { tone: 'Flirty', text: "That caught me off guard in the best way. You have a habit of saying exactly what I didn't know I needed to hear — what else are you holding back?" },
         { tone: 'Playful', text: "Okay you can't just say something like that and leave me hanging. Tell me more, I want the full story." },
         { tone: 'Warm', text: "That honestly made me smile. I feel like you actually get me, which doesn't happen often. What made you think to say that?" },
         { tone: 'Confident', text: "Bold. I respect it. Now tell me — is that how you are with everyone or am I special?" },
       ])
-    }
     setDemoLoading(false)
   }
 
@@ -329,8 +317,8 @@ export default function LandingPage() {
                 onBlur={e=>{e.target.style.borderColor='rgba(124,58,237,0.15)'}} />
             </div>
             <div style={{display:'flex',gap:'10px',marginBottom:'20px'}}>
-              <button onClick={runDemo} disabled={demoLoading||!demoMsg.trim()} style={{flex:2,padding:'10px',background:demoLoading||!demoMsg.trim()?'rgba(124,58,237,0.25)':'linear-gradient(135deg,#7c3aed,#9333ea,#d4a300)',border:'none',borderRadius:'8px',color:'#fff',fontWeight:'600',cursor:demoLoading||!demoMsg.trim()?'not-allowed':'pointer',fontFamily:'sans-serif',fontSize:'13px',transition:'all 0.2s'}}>
-                {demoLoading?'⟳ Generating...':'✦ Generate Replies'}
+              <button onClick={()=>setStep('signup')} style={{flex:2,padding:'10px',background:'linear-gradient(135deg,#7c3aed,#9333ea,#d4a300)',border:'none',borderRadius:'8px',color:'#fff',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif',fontSize:'13px',transition:'all 0.2s'}}>
+                ✦ Sign Up to Generate
               </button>
               <button title="Unlock after signup" style={{flex:1,padding:'10px',background:'rgba(234,179,8,0.05)',border:'1px solid rgba(234,179,8,0.15)',borderRadius:'8px',color:'#555560',cursor:'not-allowed',fontFamily:'sans-serif',fontSize:'11px',display:'flex',alignItems:'center',justifyContent:'center',gap:'4px'}}>
                 🔥 Re-engage <span style={{fontSize:'9px',background:'rgba(234,179,8,0.15)',padding:'2px 6px',borderRadius:'4px',color:'#fbbf24'}}>PRO</span>
@@ -370,10 +358,11 @@ export default function LandingPage() {
                     </div>
                   </div>
                 ))}
-                <div style={{textAlign:'center',marginTop:'14px',padding:'14px',background:'rgba(168,85,247,0.04)',border:'1px solid rgba(168,85,247,0.12)',borderRadius:'10px'}}>
-                  <p style={{color:'#71767b',fontSize:'12px',fontFamily:'sans-serif',margin:'0 0 10px'}}>WPM control, Re-engage, and location scanning unlock after signup</p>
-                  <button onClick={()=>setStep('signup')} style={{padding:'8px 24px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'7px',color:'#fff',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif',fontSize:'12px'}}>
-                    Get Full Access Free →
+                <div style={{textAlign:'center',marginTop:'14px',padding:'16px',background:'rgba(168,85,247,0.06)',border:'1px solid rgba(168,85,247,0.2)',borderRadius:'10px'}}>
+                  <p style={{color:'#e2e8f0',fontSize:'13px',fontFamily:'sans-serif',margin:'0 0 6px',fontWeight:'600'}}>These are sample replies. Sign up to generate real ones.</p>
+                  <p style={{color:'#71767b',fontSize:'11px',fontFamily:'sans-serif',margin:'0 0 12px'}}>Free for 7 days. No credit card. One account per email.</p>
+                  <button onClick={()=>setStep('signup')} style={{padding:'10px 28px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'8px',color:'#fff',fontWeight:'700',cursor:'pointer',fontFamily:'sans-serif',fontSize:'13px'}}>
+                    Create Free Account →
                   </button>
                 </div>
               </div>
@@ -538,7 +527,7 @@ export default function LandingPage() {
                 {step==='forgot'?'Reset Access':step==='login'?'Welcome back':'Create your account'}
               </h2>
               <p style={{color:'#71767b',margin:0,fontSize:'12px',fontFamily:'sans-serif'}}>
-                {step==='forgot'?'Enter your email — we will send a new link':'7 days free. No credit card. No phone needed.'}
+                {step==='forgot'?'Enter your email — we will send a new link':step==='login'?'Enter your email to receive a sign-in link.':'7 days free. One account per email address.'}
               </p>
             </div>
 
@@ -572,9 +561,10 @@ export default function LandingPage() {
             </button>
 
             <div style={{textAlign:'center',marginTop:'14px',fontSize:'11px',color:'#444460',fontFamily:'sans-serif',display:'flex',flexDirection:'column',gap:'6px'}}>
-              {step==='signup'&&<span>Have an account? <span onClick={()=>setStep('login')} style={{color:'#a855f7',cursor:'pointer'}}>Sign in</span></span>}
-              {step==='login'&&<span>No account? <span onClick={()=>setStep('signup')} style={{color:'#a855f7',cursor:'pointer'}}>Create one free</span></span>}
-              {step==='login'&&<span><span onClick={()=>setStep('forgot')} style={{color:'#71767b',cursor:'pointer',textDecoration:'underline'}}>Forgot access? Send new link</span></span>}
+              {step==='signup'&&<span>Already registered? <span onClick={()=>setStep('login')} style={{color:'#a855f7',cursor:'pointer'}}>Sign in with your email</span></span>}
+              {step==='signup'&&<span style={{color:'#333350'}}>One account per email. Returning users always sign in.</span>}
+              {step==='login'&&<span>No account yet? <span onClick={()=>setStep('signup')} style={{color:'#a855f7',cursor:'pointer'}}>Create one free — 7 days full access</span></span>}
+              {step==='login'&&<span><span onClick={()=>setStep('forgot')} style={{color:'#555570',cursor:'pointer',textDecoration:'underline'}}>Didn't get the link? Send again</span></span>}
               {step==='forgot'&&<span><span onClick={()=>setStep('login')} style={{color:'#a855f7',cursor:'pointer'}}>← Back to sign in</span></span>}
             </div>
           </div>
