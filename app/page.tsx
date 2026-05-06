@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 
-const API = 'https://cic-backend-b1ej.vercel.app'
+const API = ''
 
 const PLATFORMS = [
   { name: 'Texting Factory', icon: '💬', desc: 'chathomebase.com' },
