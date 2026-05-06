@@ -103,14 +103,12 @@ export default function LandingPage() {
   async function runDemo() {
     if (!demoMsg.trim()) return
     setDemoLoading(true); setDemoReplies([])
-    try {
-      // Static demo — direct to signup for real replies
-      setDemoReplies([
-        { tone: 'Flirty', text: "That caught me off guard in the best way. You have a habit of saying exactly what I didn't know I needed to hear — what else are you holding back?" },
-        { tone: 'Playful', text: "Okay you can't just say something like that and leave me hanging. Tell me more, I want the full story." },
-        { tone: 'Warm', text: "That honestly made me smile. I feel like you actually get me, which doesn't happen often. What made you think to say that?" },
-        { tone: 'Confident', text: "Bold. I respect it. Now tell me — is that how you are with everyone or am I special?" },
-      ])
+    setDemoReplies([
+      { tone: 'Flirty', text: "That caught me off guard in the best way. You have a habit of saying exactly what I didn't know I needed to hear — what else are you holding back?" },
+      { tone: 'Playful', text: "Okay you can't just say something like that and leave me hanging. Tell me more, I want the full story." },
+      { tone: 'Warm', text: "That honestly made me smile. I feel like you actually get me, which doesn't happen often. What made you think to say that?" },
+      { tone: 'Confident', text: "Bold. I respect it. Now tell me — is that how you are with everyone or am I special?" },
+    ])
     setDemoLoading(false)
   }
 
