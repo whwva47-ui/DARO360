@@ -185,6 +185,9 @@ export default function LandingPage() {
             style={{padding:'7px 14px',background:'transparent',border:'none',color:'#71767b',cursor:'pointer',fontFamily:'sans-serif',fontSize:'12px',transition:'color 0.2s'}}
             onMouseEnter={e=>{(e.target as any).style.color='#e2e8f0'}}
             onMouseLeave={e=>{(e.target as any).style.color='#71767b'}}>Pricing</button>
+          <a href="/guide" style={{padding:'7px 14px',background:'transparent',border:'none',color:'#71767b',cursor:'pointer',fontFamily:'sans-serif',fontSize:'12px',textDecoration:'none',transition:'color 0.2s'}}
+            onMouseEnter={e=>{(e.target as any).style.color='#e2e8f0'}}
+            onMouseLeave={e=>{(e.target as any).style.color='#71767b'}}>Operator Guide</a>
           <button onClick={()=>setStep('login')}
             style={{padding:'7px 16px',background:'transparent',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'7px',color:'#a0a0b0',cursor:'pointer',fontFamily:'sans-serif',fontSize:'12px',transition:'all 0.2s'}}
             onMouseEnter={e=>{(e.target as any).style.borderColor='rgba(168,85,247,0.4)';(e.target as any).style.color='#a855f7'}}
