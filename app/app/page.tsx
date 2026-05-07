@@ -116,17 +116,41 @@ export default function AppPage() {
   const [msgCount, setMsgCount] = useState(0)
 
   useEffect(() => {
-    // Get user from storage or session
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('cic_email') : null
-    const plan = typeof window !== 'undefined' ? localStorage.getItem('cic_plan') : null
+    // Check for Supabase magic link token in URL hash
+    const hash = window.location.hash
+    if (hash.includes('access_token=') && hash.includes('type=magiclink')) {
+      try {
+        const params = new URLSearchParams(hash.slice(1))
+        const accessToken = params.get('access_token')
+        if (accessToken) {
+          const payload = JSON.parse(atob(accessToken.split('.')[1]))
+          if (payload.email) {
+            localStorage.setItem('cic_email', payload.email)
+            localStorage.setItem('cic_plan', 'trial')
+            // Clean the URL
+            window.history.replaceState({}, '', '/app')
+          }
+        }
+      } catch(e) {}
+    }
+
+    // Get user from storage
+    const stored = localStorage.getItem('cic_email')
+    const plan = localStorage.getItem('cic_plan')
+
     if (stored) {
       setUser({ email: stored, plan: plan || 'trial' })
+      // Fetch real plan from server
       fetch(API + '/api/user/profile', { headers: { 'X-User-Email': stored } })
         .then(r => r.json())
-        .then(d => { if (d.email) { setUser(d); localStorage.setItem('cic_plan', d.plan) } })
+        .then(d => {
+          if (d.email) {
+            setUser(d)
+            localStorage.setItem('cic_plan', d.plan)
+          }
+        })
         .catch(() => {})
     } else {
-      // Redirect to landing if not logged in
       window.location.href = '/'
       return
     }
