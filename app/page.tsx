@@ -9,6 +9,26 @@ export default function LandingPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
+  // Detect Supabase magic link token in URL hash and redirect to /app
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash
+    if (hash.includes('access_token=') && hash.includes('type=magiclink')) {
+      // Extract email from token and store it
+      try {
+        const params = new URLSearchParams(hash.slice(1))
+        const accessToken = params.get('access_token')
+        if (accessToken) {
+          const payload = JSON.parse(atob(accessToken.split('.')[1]))
+          if (payload.email) {
+            localStorage.setItem('cic_email', payload.email)
+            localStorage.setItem('cic_plan', 'trial')
+          }
+        }
+      } catch(e) {}
+      window.location.href = '/app'
+    }
+  }
+
   async function handleSubmit() {
     if (!email || !email.includes('@')) { setError('Enter a valid email address'); return }
     setLoading(true); setError('')
