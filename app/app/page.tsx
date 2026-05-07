@@ -334,6 +334,31 @@ export default function AppPage() {
               </div>
             </div>
 
+            {/* Extension downloads */}
+            <div style={{marginBottom:'24px'}}>
+              <div style={{fontSize:'9px',color:'#444460',textTransform:'uppercase',letterSpacing:'1.5px',fontFamily:'sans-serif',marginBottom:'14px'}}>Chrome Extensions</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+                {[
+                  {name:'CIC — Texting Factory',desc:'For chathomebase.com and Texting Factory',icon:'💬',platforms:'Texting Factory · ChatHomeBase'},
+                  {name:'CIC — General Platforms',desc:'For all other dating platforms',icon:'🌐',platforms:'OnlyFans · Fansly · Alpha.date · LoyalFans · FanCentro · AdmireMe · FanVue · ManyVids'},
+                ].map((ext,i)=>(
+                  <div key={i} style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'10px',padding:'16px',textAlign:'center'}}>
+                    <div style={{fontSize:'24px',marginBottom:'8px'}}>{ext.icon}</div>
+                    <div style={{fontFamily:'sans-serif',fontWeight:'600',fontSize:'12px',color:'#e2e8f0',marginBottom:'4px'}}>{ext.name}</div>
+                    <div style={{fontFamily:'sans-serif',fontSize:'10px',color:'#71767b',marginBottom:'4px'}}>{ext.desc}</div>
+                    <div style={{fontFamily:'sans-serif',fontSize:'9px',color:'#444460',marginBottom:'12px',lineHeight:'1.5'}}>{ext.platforms}</div>
+                    <a href={'mailto:whwva47@gmail.com?subject=Extension Download Request - ' + ext.name + '&body=Please send me the download link for ' + ext.name + '. My registered email is: ' + (user?.email||'')}
+                      style={{display:'block',padding:'7px',background:'rgba(168,85,247,0.08)',border:'1px solid rgba(168,85,247,0.2)',borderRadius:'6px',color:'#a855f7',fontSize:'11px',fontFamily:'sans-serif',textDecoration:'none',fontWeight:'600'}}>
+                      Request Download Link
+                    </a>
+                  </div>
+                ))}
+              </div>
+              <div style={{marginTop:'10px',padding:'10px 14px',background:'rgba(34,197,94,0.04)',border:'1px solid rgba(34,197,94,0.12)',borderRadius:'7px',fontSize:'11px',color:'#71767b',fontFamily:'sans-serif'}}>
+                📧 Email <a href="mailto:whwva47@gmail.com" style={{color:'#22c55e',textDecoration:'none'}}>whwva47@gmail.com</a> with your registered email to receive your download links instantly.
+              </div>
+            </div>
+
             {/* Floating windows hint */}
             <div style={{background:'rgba(168,85,247,0.05)',border:'1px solid rgba(168,85,247,0.12)',borderRadius:'10px',padding:'16px 20px',display:'flex',alignItems:'center',gap:'14px'}}>
               <span style={{fontSize:'20px'}}>💡</span>
