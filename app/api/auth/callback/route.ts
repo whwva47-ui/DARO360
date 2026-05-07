@@ -4,69 +4,60 @@ import { createClient } from '@supabase/supabase-js'
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
-  const token_hash = url.searchParams.get('token_hash')
-  const type = url.searchParams.get('type')
-  const siteUrl = 'https://chattersinnercircle.vercel.app'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://chattersinnercircle.vercel.app'
 
-  console.log('[CIC] Callback received - code:', !!code, 'token_hash:', !!token_hash, 'type:', type)
+  if (code) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-  try {
-    let userId = null
-    let userEmail = null
-
-    // Handle both PKCE (code) and magic link (token_hash) flows
-    if (code) {
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-      if (!error && data.user) {
-        userId = data.user.id
-        userEmail = data.user.email
-      } else {
-        console.log('[CIC] Code exchange error:', error?.message)
-      }
-    } else if (token_hash && type) {
-      const { data, error } = await supabase.auth.verifyOtp({
-        token_hash,
-        type: type as any
-      })
-      if (!error && data.user) {
-        userId = data.user.id
-        userEmail = data.user.email
-      } else {
-        console.log('[CIC] OTP verify error:', error?.message)
-      }
-    }
-
-    if (userId && userEmail) {
-      console.log('[CIC] User authenticated:', userEmail)
-
-      // Create profile if new user
+    if (!error && data.user) {
       const { data: existing } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('id', userId)
+        .select('id, trial_used')
+        .eq('id', data.user.id)
         .single()
 
       if (!existing) {
+        const phone = data.user.user_metadata?.phone
+        const referralCode = data.user.user_metadata?.referralCode
+
+        // Create profile — mark trial_used immediately to prevent cloning
         await supabase.from('profiles').insert({
-          id: userId,
-          email: userEmail,
+          id: data.user.id,
+          email: data.user.email,
+          phone: phone || null,
           plan: 'trial',
           trial_used: true,
           trial_started_at: new Date().toISOString(),
           trial_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         })
-        console.log('[CIC] New profile created for:', userEmail)
+
+        // Award referral points
+        if (referralCode) {
+          const { data: referrer } = await supabase
+            .from('profiles')
+            .select('id, points')
+            .eq('referral_code', referralCode)
+            .single()
+
+          if (referrer && referrer.id !== data.user.id) {
+            await supabase.from('profiles')
+              .update({ points: (referrer.points || 0) + 150 })
+              .eq('id', referrer.id)
+            await supabase.from('referrals').insert({
+              referrer_id: referrer.id,
+              referred_id: data.user.id
+            })
+          }
+        }
       }
 
       return NextResponse.redirect(new URL(`${siteUrl}/?auth=success`))
     }
-  } catch (e: any) {
-    console.error('[CIC] Callback error:', e.message)
   }
 
   return NextResponse.redirect(new URL(`${siteUrl}/?auth=error`))
