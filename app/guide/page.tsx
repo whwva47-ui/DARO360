@@ -386,6 +386,15 @@ export default function GuidePage() {
   const [showUpgrade, setShowUpgrade] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
+  function downloadPDF() {
+    const plan = typeof window !== 'undefined' ? localStorage.getItem('cic_plan') : null
+    if (plan === 'pro') {
+      window.print()
+    } else {
+      setShowUpgrade(true)
+    }
+  }
+
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
