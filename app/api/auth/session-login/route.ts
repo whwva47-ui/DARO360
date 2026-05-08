@@ -4,14 +4,18 @@ import { createClient } from "@supabase/supabase-js";
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase env missing");
+  if (!url || !key) throw new Error("Missing Supabase environment variables");
   return createClient(url, key);
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { token } = await req.json();
     const supabase = getSupabase();
+
+    const { token } = await req.json();
+    if (!token) {
+      return NextResponse.json({ error: "Missing token" }, { status: 400 });
+    }
 
     const { data } = await supabase
       .from("extension_tokens")
@@ -23,8 +27,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 403 });
     }
 
-    return NextResponse.json({ ok: true, email: data.email });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const expired = new Date(data.expires_at) < new Date();
+    if (expired) {
+      return NextResponse.json({ error: "Token expired" }, { status: 410 });
+    }
+
+    return NextResponse.json({ email: data.email });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
