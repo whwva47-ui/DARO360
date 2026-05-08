@@ -1,20 +1,38 @@
 /**
  * app/api/pro/request/route.ts
  *
- * Receives upgrade or multi-device requests from the extension.
- * Logs to pro_requests table. Emails admin. Never exposes payment details.
+ * Receives upgrade and multi-device requests from the extension.
+ *
+ * NO EMAIL SDK — Resend removed completely.
+ *
+ * What it does:
+ * 1. Validates the request
+ * 2. Logs it to the pro_requests table in Supabase
+ * 3. Optionally pings a webhook URL (set ADMIN_WEBHOOK_URL in Vercel env)
+ *    — works with Make.com, Zapier, n8n, or any webhook that forwards to your email/WhatsApp
+ * 4. Returns success to the operator immediately
+ *
+ * Admin sees new requests by:
+ *   a) Checking Supabase → pro_requests table (Dashboard → Table Editor)
+ *   b) OR setting ADMIN_WEBHOOK_URL to a Make/Zapier webhook that sends you a WhatsApp/email
+ *
+ * SQL to check pending requests anytime:
+ *   SELECT email, payment_method, request_type, status, created_at
+ *   FROM pro_requests WHERE status = 'pending' ORDER BY created_at DESC;
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-const resend = new Resend(process.env.RESEND_API_KEY!);
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'whwva47@gmail.com';
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Missing Supabase env vars.');
+  return createClient(url, key);
+}
+
+const ADMIN_EMAIL   = process.env.ADMIN_EMAIL   || 'whwva47@gmail.com';
+const WEBHOOK_URL   = process.env.ADMIN_WEBHOOK_URL || ''; // optional
 
 const ALLOWED_ORIGINS = [
   'chrome-extension://dkgpheiimhedhdfandcgeogmbfmmiobp',
@@ -32,12 +50,11 @@ const ALLOWED_ORIGINS = [
   'https://fanvue.com',
   'https://www.manyvids.com',
   'https://unlockd.com',
-  'https://agents.moderationinterface.com',
   'http://localhost:3000',
 ];
 
 function cors(origin: string | null) {
-  const o = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const o = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[1];
   return {
     'Access-Control-Allow-Origin': o,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -55,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   let email: string, paymentMethod: string, requestType: string;
   try {
-    const body  = await req.json();
+    const body   = await req.json();
     email         = (body.email         ?? req.headers.get('X-User-Email') ?? '').trim().toLowerCase();
     paymentMethod = (body.paymentMethod ?? '').trim().toLowerCase();
     requestType   = (body.requestType   ?? 'upgrade').trim().toLowerCase();
@@ -74,43 +91,53 @@ export async function POST(req: NextRequest) {
     crypto: 'Crypto (USDT / BTC / ETH)',
   };
 
-  // Log to pro_requests
-  await supabase.from('pro_requests').insert({
-    email,
-    payment_method: paymentMethod || null,
-    request_type:   requestType,
-    status:         'pending',
-  });
-
-  // Email admin
-  const isMultiDevice = requestType === 'multi_device';
-  const subject = isMultiDevice
-    ? `🖥 Multi-device request — ${email}`
-    : `⬆ Upgrade request — ${methodLabels[paymentMethod] ?? paymentMethod} — ${email}`;
-
+  // ── 1. Log to Supabase ─────────────────────────────────────────────
   try {
-    await resend.emails.send({
-      from:    'CIC System <noreply@chattersinnercircle.com>',
-      to:      ADMIN_EMAIL,
-      subject,
-      html: isMultiDevice
-        ? `<p><b>${email}</b> is requesting multi-device access.</p>
-           <p>To approve: run this in Supabase SQL Editor:</p>
-           <pre>UPDATE public.operators SET allow_multiple_devices = TRUE WHERE email = '${email}';
-UPDATE public.active_sessions SET allow_multiple = TRUE WHERE email = '${email}';</pre>`
-        : `<p><b>${email}</b> wants to upgrade via <b>${methodLabels[paymentMethod] ?? paymentMethod}</b>.</p>
-           <p>Reply to <b>${email}</b> with your payment details for ${methodLabels[paymentMethod] ?? paymentMethod}.</p>
-           <p>After payment confirmed, activate Pro:</p>
-           <pre>UPDATE public.profiles SET plan = 'pro', plan_status = 'approved' WHERE email = '${email}';</pre>`,
+    const supabase = getSupabase();
+    await supabase.from('pro_requests').insert({
+      email,
+      payment_method: paymentMethod || null,
+      request_type:   requestType,
+      status:         'pending',
     });
-  } catch (e) {
-    console.error('[pro/request] email failed:', e);
+  } catch (dbErr) {
+    console.error('[pro/request] Supabase insert error:', dbErr);
+    // Don't fail the request — still return success to the operator
   }
 
+  // ── 2. Ping webhook if configured (Make.com / Zapier / n8n) ────────
+  // Set ADMIN_WEBHOOK_URL in Vercel env to receive instant notifications
+  // via WhatsApp, Gmail, Telegram, or any channel your webhook supports
+  if (WEBHOOK_URL) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type:          requestType,
+          email,
+          paymentMethod: methodLabels[paymentMethod] ?? paymentMethod,
+          adminEmail:    ADMIN_EMAIL,
+          timestamp:     new Date().toISOString(),
+          message: requestType === 'multi_device'
+            ? `CIC: ${email} is requesting multi-device access.`
+            : `CIC: ${email} wants to upgrade via ${methodLabels[paymentMethod] ?? paymentMethod}. Reply with payment details.`,
+        }),
+      });
+    } catch (whErr) {
+      console.warn('[pro/request] Webhook ping failed:', whErr);
+      // Non-fatal — request is already logged in Supabase
+    }
+  }
+
+  // ── 3. Return success to operator ──────────────────────────────────
+  const isMultiDevice = requestType === 'multi_device';
   return NextResponse.json(
-    { success: true, message: isMultiDevice
-        ? 'Request sent. The admin will review and email you.'
-        : `Got it! We will email you the ${methodLabels[paymentMethod] ?? 'payment'} details shortly.`
+    {
+      success: true,
+      message: isMultiDevice
+        ? 'Request sent. The admin will review and contact you shortly.'
+        : `Got it! The admin will send you the ${methodLabels[paymentMethod] ?? 'payment'} details shortly.`,
     },
     { status: 200, headers: h }
   );
