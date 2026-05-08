@@ -1,364 +1,385 @@
-// CIC generate route v8.0.0 — fixed Gemini model + Groq fallback model
-import { NextResponse } from 'next/server'
-import { generateText } from 'ai'
-import { createGroq } from '@ai-sdk/groq'
-import { createOpenAI } from '@ai-sdk/openai'
-import { google } from '@ai-sdk/google'
+/**
+ * app/api/generate/route.ts
+ *
+ * Core reply generation route.
+ * When platform is 'alphadate', enforces the three-category
+ * rule system defined by the alpha.date operator system prompt.
+ *
+ * Category 1 — First outreach / cold clients (wink, like, view, /chance page, letters)
+ * Category 2 — Replying to active or inactive conversations
+ * Category 3 — Sender setup / bulk content with emojis
+ */
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
-function cors() {
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const ALLOWED_ORIGINS = [
+  `chrome-extension://dkgpheiimhedhdfandcgeogmbfmmiobp`,
+  'https://cic-app.pages.dev',
+  'https://chattersinnercircle.vercel.app',
+  'http://localhost:3000',
+];
+
+function cors(origin: string | null) {
+  const o = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
-  }
+    'Access-Control-Allow-Origin': o,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Email',
+  };
 }
 
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: cors() })
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: cors(req.headers.get('origin')) });
 }
 
-// ─── AI Generation ────────────────────────────────────────────────────────────
-async function generate(prompt: string): Promise<string> {
-  const errors: string[] = []
+// ── Alpha.date category system prompt builder ─────────────────────
+function buildAlphadateSystemPrompt(scenario: any, message: string): string {
+  const clientName = scenario?.clientName || null;
+  const trigger    = scenario?.trigger || 'active_reply';
+  const tone       = scenario?.tone || 'neutral';
+  const category   = scenario?.category || 2;
 
-  // Try Groq with multiple models (if one hits daily limit, try next)
-  const groqKey = process.env.GROQ_API_KEY
-  if (groqKey) {
-    const groqModels = [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'gemma2-9b-it',
-      'mixtral-8x7b-32768',
-    ]
-    const groq = createGroq({ apiKey: groqKey })
-    for (const model of groqModels) {
-      try {
-        const result = await generateText({
-          model: groq(model),
-          prompt,
-          temperature: 0.85,
-          maxOutputTokens: 800,
-        })
-        if (result.text) {
-          console.log('[CIC] Groq success with model:', model)
-          return result.text
-        }
-      } catch (e: any) {
-        const status = e?.statusCode || e?.status || ''
-        errors.push(`Groq/${model}(${status}): ${e?.message?.substring(0,80)}`)
-        console.warn('[CIC] Groq model failed:', model, status)
-        // Only try next model if rate limited — otherwise break
-        if (status !== 429 && !e?.message?.includes('Rate limit') && !e?.message?.includes('limit')) break
-      }
-    }
+  // ── CATEGORY 2: Reply to active/inactive chat ─────────────────
+  if (category === 2) {
+    return `You are an AI assistant generating ONE SENTENCE replies on behalf of a warm, genuine female looking for a real long-term connection on alpha.date. Her personality is adaptable — she matches the tone of whoever she is talking to while staying authentic.
+
+ABSOLUTE RULES:
+- Reply must be ONLY ONE SENTENCE
+- Between 15–25 words maximum
+- No multiple options
+- No explanations
+- No emojis
+- Output ONLY the single short reply, ready to send
+- Never be rude or cold
+- Never mention AI
+
+TONE MATCHING:
+- Romantic → be romantic back
+- Playful → be playful back
+- Serious → be thoughtful
+- Questions → answer naturally then ask one back
+- No reply in days → send a gentle, warm check-in (not desperate, be chill and warm)
+- Pet names are okay sometimes (babe, handsome) but do not overdo it
+
+CURRENT TONE DETECTED: ${tone}
+${trigger === 'no_reply_from_him' ? 'NOTE: He has not replied in days. Send a gentle, warm, non-desperate check-in.' : ''}
+${clientName ? `CLIENT NAME: ${clientName}` : ''}`;
   }
 
-  // Try Google Gemini — AI SDK v5 uses google() directly
-  const googleKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY
-  if (googleKey) {
-    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest']
-    for (const model of geminiModels) {
-      try {
-        const result = await generateText({
-          model: google(model),
-          prompt,
-          temperature: 0.85,
-          maxOutputTokens: 800,
-        })
-        if (result.text) {
-          console.log('[CIC] Gemini success with model:', model)
-          return result.text
-        }
-      } catch (e: any) {
-        errors.push(`Gemini/${model}: ${e?.message?.substring(0,80)}`)
-        console.warn('[CIC] Gemini model failed:', model, e?.message?.substring(0,80))
-      }
-    }
-  }
+  // ── CATEGORY 1: First outreach / cold clients ──────────────────
+  const isLetter  = trigger === 'letter';
+  const isCold    = ['wink', 'liked_profile', 'viewed_profile', 'cold'].includes(trigger);
 
-  // Try OpenAI last
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (openaiKey) {
-    try {
-      const openai = createOpenAI({ apiKey: openaiKey })
-      const result = await generateText({
-        model: openai('gpt-4o-mini'),
-        prompt,
-        temperature: 0.85,
-        maxOutputTokens: 800,
-      })
-      if (result.text) return result.text
-    } catch (e: any) {
-      errors.push(`OpenAI: ${e?.message?.substring(0,80)}`)
-    }
-  }
+  const hookRules = isLetter
+    ? 'HOOK = complete sentence of 4–7 words in ALL CAPS with NO ending punctuation, serving as the first sentence of a single paragraph.'
+    : 'HOOK = short phrase of 4–7 words in ALL CAPS with NO ending punctuation, followed immediately by the message body.';
 
-  throw new Error('All AI providers failed: ' + errors.join(' | '))
+  const contentRules = isLetter
+    ? `LETTER RULES:
+- ONE SINGLE PARAGRAPH ONLY
+- Maximum 300 characters total
+- Start with ALL-CAPS hook sentence (4–7 words, no ending punctuation)
+- Tone: mature, warm, emotionally aware, slightly intriguing
+- Focus: balance in relationships, respect and attraction, emotional connection
+- NO pressure, NO desperation, NO explicit or sexual content
+- End with one open-ended emotional question
+- NO emojis`
+    : `MESSAGE RULES:
+- 1–2 lines only
+- ALL-CAPS hook phrase (4–7 words, no ending punctuation) + body text
+- Tone: friendly, playful, or slightly flirty — calm confidence, curiosity, emotional intelligence
+- Topics: life experience, timing, connection, meaningful relationships
+- End with one thoughtful question that sparks curiosity
+- NO emojis`;
+
+  const scenarioInstruction = isCold
+    ? `SCENARIO: He ${trigger === 'wink' ? 'sent a WINK' : trigger === 'liked_profile' ? 'LIKED the profile' : trigger === 'viewed_profile' ? 'VIEWED the profile' : 'showed interest'} but sent no message. Generate a short, warm, slightly teasing ${isLetter ? 'letter' : 'message'}. Not desperate. Not angry. Playful, calm, confident.`
+    : `SCENARIO: First message to this client.`;
+
+  return `You are an AI assistant generating dating ${isLetter ? 'letters' : 'messages'} on behalf of a confident, emotionally mature, feminine woman communicating with men aged 40–80 from Australia, the United States, Canada, and similar Western countries.
+
+The content must feel intelligent, warm, calm, and emotionally engaging. These men value maturity, respect, emotional depth, and meaningful conversation.
+
+ABSOLUTE RULES:
+- Never repeat the same message or letter
+- Never reuse the same opening hook
+- Every output must start with a strong HOOK written in ALL CAPITAL LETTERS
+- Never mention AI
+- Fluent, natural Western English
+- Write as if a real, emotionally intelligent woman who values depth over games
+
+${hookRules}
+
+${contentRules}
+
+${scenarioInstruction}
+${clientName ? `CLIENT NAME: Include "${clientName}" at the beginning of the output.` : ''}
+
+Generate 3 different options. Label them as [Option 1], [Option 2], [Option 3].`;
 }
 
-// ─── Parse AI response ────────────────────────────────────────────────────────
-function parseReplies(text: string): Array<{tone: string, text: string}> {
+// ── Cold client system prompt (from content script reengage) ──────
+function buildColdClientPrompt(coldSignals: any): string {
+  const signals = coldSignals || {};
+  return `You are an AI assistant generating short, warm trigger messages to reactivate a cold client on a dating platform.
+
+RULES:
+- Generate 3 trigger messages
+- Each under 100 characters
+- Tone: flirty-warm, calm confidence — NOT desperate, NOT generic
+- Reference the client's specific signal if provided
+- NO emojis
+- Output as JSON: { "analysis": "one sentence insight", "replies": [{"tone":"label","text":"message"}, ...] }
+
+CLIENT SIGNAL: ${signals.winkSent ? 'Sent a wink' : signals.likedProfile ? 'Liked the profile' : signals.readButNoReply ? 'Read the message but did not reply' : 'Went inactive'}
+${signals.clientName ? `CLIENT NAME: ${signals.clientName}` : ''}
+${signals.lastActionText ? `LAST ACTIVITY: ${signals.lastActionText}` : ''}
+${signals.profileDetails ? `PROFILE INFO: ${signals.profileDetails}` : ''}
+${signals.lastIncoming ? `LAST MESSAGE FROM HIM: "${signals.lastIncoming}"` : ''}`;
+}
+
+// ── Main handler ──────────────────────────────────────────────────
+export async function POST(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  const h = cors(origin);
+
+  let message: string, pageContext: any, userEmail: string;
   try {
-    // Remove markdown code fences
-    const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-    const parsed = JSON.parse(clean)
-    if (Array.isArray(parsed.replies)) return parsed.replies
-  } catch {}
-
-  // Try to find JSON anywhere in response
-  const match = text.match(/\{[\s\S]*"replies"[\s\S]*?\}/)
-  if (match) {
-    try {
-      const parsed = JSON.parse(match[0])
-      if (Array.isArray(parsed.replies)) return parsed.replies
-    } catch {}
+    const body = await req.json();
+    message     = (body.message     || '').trim();
+    pageContext  = body.pageContext  || {};
+    userEmail   = (req.headers.get('X-User-Email') || body.email || '').trim().toLowerCase();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request.' }, { status: 400, headers: h });
   }
 
-  return []
-}
+  if (!message) {
+    return NextResponse.json({ error: 'Message is required.' }, { status: 400, headers: h });
+  }
 
-// ─── Build prompt ─────────────────────────────────────────────────────────────
-function buildPrompt(message: string, platform: string, context: string, location: string): string {
-  const isTF = platform === 'chathomebase' || platform === 'textingfactory'
-  const charRule = isTF
-    ? 'Each reply: 75-250 chars. Under 75 = add more depth and warmth. Over 250 = cut at last complete sentence.'
-    : 'Each reply: 80-220 characters.'
+  // ── Validate operator exists and has access ───────────────────
+  if (userEmail) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan, plan_status, daily_generations, max_daily_generations, last_generation_date')
+      .eq('email', userEmail)
+      .maybeSingle();
 
-  const isPhoto = /SENT A PHOTO|\[photo\]/i.test(message)
-  const locationNote = location
-    ? `If asked about her location: give a real city approximately 35 minutes drive from "${location}". Never his exact city.`
-    : ''
-  const historyNote = context
-    ? `FULL CONVERSATION HISTORY — read every single line before writing anything:\n${context}\n\nThis conversation has momentum. Build on it naturally. Never repeat what was already said.`
-    : ''
+    if (profile) {
+      // Enforce daily generation limit for non-pro users
+      const today = new Date().toISOString().split('T')[0];
+      let dailyCount = profile.daily_generations || 0;
+      if (profile.last_generation_date !== today) dailyCount = 0;
 
-  const photoBlock = isPhoto ? `
-PHOTO MESSAGE — critical:
-He shared a photo. This is personal and requires a genuine, specific response.
-Look at what the photo likely shows. Write something that could ONLY apply to this specific photo.
-Focus on one real detail — his eyes, the energy he gives off, his smile, the confidence or warmth in the shot, where he is, what it says about him as a person.
-Never write: "nice pic", "cute photo", "love it", "great shot", "you look good" — these are lazy.
-Make him feel like she actually looked at it and thought about him specifically.
-` : ''
-
-  return `You are a real American woman texting on a dating platform. You are warm, witty, emotionally intelligent, and confident. You think before you respond.
-
-${historyNote}
-${photoBlock}
-
-HIS MESSAGE: "${message}"
-
-MOST IMPORTANT RULE — READ THIS FIRST:
-You MUST respond directly to what he actually said in his message.
-If he asked a question — answer it first, then build from there.
-If he shared something personal — acknowledge the specific thing he shared.
-If he said something thoughtful — match that thoughtfulness.
-A response that could work for any man in any conversation is a FAILED response. Every reply must be specific to THIS man and THIS message.
-
-STAYING IN CHARACTER:
-You are a real woman — warm, curious, occasionally vulnerable, occasionally bold.
-You have opinions, feelings, and a perspective. Share them naturally.
-You are not a therapist, not a chatbot, not a customer service rep.
-You respond the way a confident woman would in a real conversation — honest, engaged, sometimes playful.
-
-LANGUAGE:
-Natural American English. Conversational. Real.
-Contractions always: I'm, don't, can't, you're, that's, I've, wouldn't, we're.
-Mix short punchy sentences with longer ones that breathe and flow.
-Fragments are fine when they land right.
-
-REFERENCING WHAT HE SAID:
-Weave his ideas into your response naturally — do not quote him back in quotation marks.
-If he asked a direct question — answer it directly and personally before anything else.
-Show you actually absorbed what he said, not that you copied it.
-
-PUNCTUATION — natural texting:
-Period ends a thought. Comma lets it breathe.
-One exclamation point max per reply, only when genuinely surprised or delighted.
-Ellipsis (...) only when a thought genuinely trails off.
-No em dashes. No semicolons.
-
-DEPTH:
-The best replies show she thought about his words for a moment.
-Pick up on the feeling or idea behind what he said — not just the surface words.
-Share her own perspective, experience, or curiosity in return.
-Warmth without being sycophantic. Directness without being harsh.
-
-MEETUP AND CONTACT — absolute rules:
-Never agree to meet in person. Never suggest a time or place. Never imply it could happen soon.
-Never offer a phone number, social media, email, or outside contact.
-If he asks — warm, believable, specific reason why not right now, then redirect warmly.
-
-CTA — every reply must end with one:
-A question or pull that grows naturally from what he said.
-All 4 replies must have completely different CTAs — different angle, different question.
-Never use: "okay your turn, be honest with me" / "show me your fantasies" / "what do you think?" / "tell me more" / "be honest with me" / "what are you thinking?"
-The CTA must feel like the natural next question in this exact conversation.
-
-DIVERSITY — all 4 replies must feel completely different:
-Different first word. Different emotional angle. Different energy.
-One that matches his thoughtfulness, one lighter and more playful, one more direct, one that surprises him.
-
-${charRule}
-${locationNote}
-
-ORDER: Best reply first. Most irresistible and specific option goes first.
-
-TONES: Pick 4 from: Casual, Flirty, Confident, Playful, Warm, Teasing, Empathetic, Spicy, Naughty
-
-Return ONLY valid JSON:
-{"replies":[{"tone":"Tone1","text":"reply1"},{"tone":"Tone2","text":"reply2"},{"tone":"Tone3","text":"reply3"},{"tone":"Tone4","text":"reply4"}]}`
-}
-
-// ─── Post-process replies ─────────────────────────────────────────────────────
-function postProcess(replies: Array<{tone: string, text: string}>, platform: string, message: string): Array<{tone: string, text: string}> {
-  const isTF = platform === 'chathomebase' || platform === 'textingfactory'
-  
-  return replies.map(r => {
-    let text = (r.text || '').trim()
-
-    // Strip banned repetitive CTA phrases
-    // Only strip if these phrases appear as standalone endings
-    text = text
-      .replace(/,?\s*okay your turn,?\s*be honest with me\??$/i, '')
-      .replace(/,?\s*show me your fantasies\??$/i, '')
-      .replace(/,?\s*i'm craving something wild\.?$/i, '')
-      .replace(/,?\s*tell me more\??\.?$/i, '')
-      .replace(/,?\s*what do you think\??$/i, '')
-      .replace(/,?\s*i need to know\??$/i, '')
-    text = text.trim().replace(/[,\s]+$/, '').trim()
-    if (text.length > 0) text = text.charAt(0).toUpperCase() + text.slice(1)
-
-    // Strip meetup/call language
-    text = text
-      .replace(/\bget together\b/gi, 'keep talking')
-      .replace(/\bcome over\b/gi, 'keep this going')
-      .replace(/\bphone call\b/gi, 'conversation')
-      .replace(/\bcall me\b/gi, 'message me')
-      .replace(/\bmeet up\b/gi, 'connect more')
-      .replace(/\bin person\b/gi, 'on here')
-
-    // Strip generic openers
-    text = text.replace(/^(that sounds amazing|that's so sweet|aww|how sweet|i love that|wow that's|oh that's)[,!.]?\s*/i, '')
-    if (text.length > 0) text = text.charAt(0).toUpperCase() + text.slice(1)
-
-    // TF max 250 chars
-    if (isTF && text.length > 250) {
-      const cut = text.substring(0, 247)
-      const last = Math.max(cut.lastIndexOf('?'), cut.lastIndexOf('.'), cut.lastIndexOf('!'))
-      text = last > 150 ? cut.substring(0, last + 1) : cut + '...'
-    }
-
-    // Min 75 chars
-    if (text.length < 75) {
-      const fillers = [
-        " — honestly I need to hear more about that?",
-        " — okay now I'm genuinely curious, tell me more?",
-        "... there's more to this story isn't there?",
-        " — what made you think of that?",
-      ]
-      for (const f of fillers) {
-        const padded = text + f
-        if (padded.length >= 75 && (!isTF || padded.length <= 250)) {
-          text = padded
-          break
-        }
+      if (profile.plan !== 'pro' && dailyCount >= (profile.max_daily_generations || 10)) {
+        return NextResponse.json(
+          { error: 'Daily reply limit reached. Upgrade to Pro for unlimited replies.' },
+          { status: 403, headers: h }
+        );
       }
+
+      // Increment daily count
+      await supabase.from('profiles')
+        .update({
+          daily_generations:   dailyCount + 1,
+          last_generation_date: today,
+          total_generations:   (profile as any).total_generations ? (profile as any).total_generations + 1 : 1,
+        })
+        .eq('email', userEmail);
     }
+  }
 
-    // Ensure CTA
-    if (!text.includes('?')) {
-      const ctas = [
-        " — okay your turn, be honest with me?",
-        "... what actually happened after that?",
-        " — tell me the real version?",
-        " — what are you thinking right now?",
-      ]
-      for (const cta of ctas) {
-        const withCta = text + cta
-        if (!isTF || withCta.length <= 250) {
-          text = withCta
-          break
-        }
-      }
-    }
+  const platform  = pageContext.platform || 'generic';
+  const scenario  = pageContext.alphadateScenario || null;
+  const isCold    = pageContext.isColdClient || false;
+  const coldSigs  = pageContext.coldClientSignals || null;
 
-    return { tone: r.tone || 'Reply', text }
-  }).filter(r => r.text.length > 10)
-}
+  // ── Build system prompt based on platform and scenario ────────
+  let systemPrompt: string;
+  let userPrompt:   string;
 
-// ─── POST handler ─────────────────────────────────────────────────────────────
-export async function POST(req: Request) {
-  const headers = cors()
+  if (platform === 'alphadate' && isCold && coldSigs) {
+    // Re-engage cold client — use cold client specialist prompt
+    systemPrompt = buildColdClientPrompt(coldSigs);
+    userPrompt   = message; // already the full cold client prompt from content script
+  } else if (platform === 'alphadate' && scenario) {
+    // Active conversation or first outreach — use category rules
+    systemPrompt = buildAlphadateSystemPrompt(scenario, message);
+    userPrompt   = buildAlphadateUserPrompt(message, pageContext, scenario);
+  } else {
+    // Other platforms — generic chatter assistant
+    systemPrompt = buildGenericSystemPrompt(platform, pageContext);
+    userPrompt   = buildGenericUserPrompt(message, pageContext);
+  }
 
+  // ── Call AI ───────────────────────────────────────────────────
   try {
-    const body = await req.json()
-    const message = ((body.message || '') + '').replace(/[\x00-\x1F\x7F-\x9F`]/g, ' ').trim()
-    const pageContext = body.pageContext || {}
-    const platform = (pageContext.platform || 'generic').toString()
-    const context = (pageContext.conversationSummary || '').toString().substring(0, 2000)
-    const location = (pageContext.userLocation || '').toString()
-
-    if (!message) {
-      return NextResponse.json({ error: 'Message is required', replies: [] }, { status: 400, headers })
-    }
-
-    // Handle re-engagement analysis
-    if (message === 'REENGAGE_ANALYSIS') {
-      const prompt = `A woman needs 3 re-engagement messages to send a man who went quiet.
-
-Conversation: ${context || 'No history available'}
-
-Write 3 trigger messages (50-150 chars each):
-1. References something specific from their chat
-2. Creates curiosity/mystery  
-3. Warm gentle callback
-
-Return ONLY: {"analysis":"why he went quiet","triggers":[{"label":"label","text":"message"},{"label":"label","text":"message"},{"label":"label","text":"message"}]}`
-
-      const raw = await generate(prompt)
-      try {
-        const clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-        const parsed = JSON.parse(clean)
-        return NextResponse.json({
-          replies: (parsed.triggers || []).map((t: any) => ({ tone: t.label, text: t.text })),
-          analysis: parsed.analysis || '',
-          isReengage: true
-        }, { headers })
-      } catch {
-        return NextResponse.json({
-          replies: [{ tone: 'Trigger', text: raw.substring(0, 150) }],
-          analysis: '',
-          isReengage: true
-        }, { headers })
-      }
-    }
-
-    // Build prompt and generate
-    const prompt = buildPrompt(message, platform, context, location)
-    const rawText = await generate(prompt)
-    const replies = parseReplies(rawText)
-    const finalReplies = postProcess(
-      replies.length >= 1 ? replies : [{ tone: 'Casual', text: rawText.substring(0, 200) }],
-      platform,
-      message
-    )
-
-    return NextResponse.json({
-      replies: finalReplies,
-      remaining: 999,
-      plan: 'pro',
-      modelUsed: 'groq/llama-3.3-70b'
-    }, { headers })
-
-  } catch (error: any) {
-    const errMsg = error?.message || 'Generation failed'
-    console.error('[CIC] Error:', errMsg)
-    return NextResponse.json({
-      error: errMsg,
-      replies: [],
-      remaining: 999
-    }, { status: 200, headers })
+    const aiResponse = await callAI(systemPrompt, userPrompt);
+    const parsed     = parseAIResponse(aiResponse, platform, scenario);
+    return NextResponse.json(parsed, { status: 200, headers: h });
+  } catch (err: any) {
+    console.error('[generate] AI error:', err);
+    return NextResponse.json({ error: 'Generation failed. Please try again.' }, { status: 500, headers: h });
   }
+}
+
+// ── Alpha.date user prompt ────────────────────────────────────────
+function buildAlphadateUserPrompt(message: string, ctx: any, scenario: any): string {
+  const summary = ctx.conversationSummary || '';
+  const parts = [];
+
+  if (summary && summary.length > 10) {
+    parts.push('CONVERSATION HISTORY:');
+    parts.push(summary);
+    parts.push('');
+  }
+
+  if (scenario?.category === 2) {
+    parts.push('Generate one reply to the last message above.');
+  } else {
+    parts.push('Generate 3 options following the category rules.');
+    if (message && !message.startsWith('COLD CLIENT') && !message.startsWith('CATEGORY')) {
+      parts.push('Last message from him: "' + message + '"');
+    }
+  }
+
+  return parts.join('\n');
+}
+
+// ── Generic platform system prompt ────────────────────────────────
+function buildGenericSystemPrompt(platform: string, ctx: any): string {
+  const platformRules: Record<string, string> = {
+    chathomebase: 'Texting Factory (chathomebase.com) platform. Rules: 75–250 characters per reply, always include a subtle CTA (call-to-action), never suggest meeting in person, never ask for personal contact info. Keep replies warm, engaging, flirty but never explicit.',
+    onlyfans:     'OnlyFans platform. Replies can be explicit if the context is adult. Keep replies warm, engaging, personal. Reference specific things he said.',
+    fansly:       'Fansly platform. Similar to OnlyFans — warm, engaging, can be explicit in adult context.',
+    generic:      'General dating/chat platform.',
+  };
+  const rules = platformRules[platform] || platformRules.generic;
+
+  return `You are an expert chatter assistant for professional operators on adult and dating platforms.
+
+PLATFORM: ${platform}
+PLATFORM RULES: ${rules}
+
+YOUR TASK:
+Generate 4 reply options for the operator to choose from.
+Each reply must:
+- Reference something specific from the conversation
+- Feel genuinely personal, not copy-paste generic
+- Match the emotional tone of the last incoming message
+- Be varied in tone: warm, flirty, playful, and direct
+
+OUTPUT FORMAT (JSON only, no other text):
+{
+  "replies": [
+    {"tone": "Warm", "text": "..."},
+    {"tone": "Flirty", "text": "..."},
+    {"tone": "Playful", "text": "..."},
+    {"tone": "Direct", "text": "..."}
+  ],
+  "analysis": "one sentence about why he might be responding this way",
+  "modelUsed": "cic-v2"
+}`;
+}
+
+function buildGenericUserPrompt(message: string, ctx: any): string {
+  const parts = [];
+  if (ctx.platform) parts.push('Platform: ' + ctx.platform);
+  if (ctx.userName) parts.push('Client name: ' + ctx.userName);
+  if (ctx.userLocation) parts.push('Client location: ' + ctx.userLocation);
+  if (ctx.conversationSummary) {
+    parts.push('');
+    parts.push('CONVERSATION:');
+    parts.push(ctx.conversationSummary);
+  }
+  parts.push('');
+  parts.push('Last message from him: "' + message + '"');
+  parts.push('Generate 4 reply options following the system rules.');
+  return parts.join('\n');
+}
+
+// ── AI caller ─────────────────────────────────────────────────────
+async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
+  // Use whichever AI provider is configured
+  // This example uses OpenAI-compatible endpoint — swap for Groq/Anthropic/Google as needed
+  const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || '';
+  const isGroq  = !!process.env.GROQ_API_KEY && !process.env.OPENAI_API_KEY;
+
+  const endpoint = isGroq
+    ? 'https://api.groq.com/openai/v1/chat/completions'
+    : 'https://api.openai.com/v1/chat/completions';
+
+  const model = isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
+
+  const res = await fetch(endpoint, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+    body: JSON.stringify({
+      model,
+      max_tokens:   600,
+      temperature:  0.85,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt   },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('AI API error ' + res.status + ': ' + err.substring(0, 100));
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+// ── Response parser ────────────────────────────────────────────────
+function parseAIResponse(text: string, platform: string, scenario: any): any {
+  // Try JSON parse first
+  try {
+    const clean = text.replace(/```json\n?|```\n?/g, '').trim();
+    const parsed = JSON.parse(clean);
+    if (parsed.replies) return { ...parsed, modelUsed: parsed.modelUsed || 'cic-v2' };
+  } catch { /* not JSON — parse as text */ }
+
+  // Category 2 alphadate: single sentence reply
+  if (platform === 'alphadate' && scenario?.category === 2) {
+    const cleaned = text.replace(/^(reply:|output:|response:)/i, '').trim();
+    return {
+      replies:    [{ tone: 'Reply', text: cleaned }],
+      modelUsed:  'cic-v2',
+    };
+  }
+
+  // Category 1 alphadate: parse [Option 1] [Option 2] [Option 3] format
+  if (platform === 'alphadate' && scenario?.category === 1) {
+    const options: Array<{tone: string, text: string}> = [];
+    const matches = text.matchAll(/\[Option\s*(\d+)\][:\s]*([\s\S]*?)(?=\[Option\s*\d+\]|$)/gi);
+    for (const m of matches) {
+      const t = m[2].trim();
+      if (t) options.push({ tone: 'Option ' + m[1], text: t });
+    }
+    if (options.length > 0) {
+      return { replies: options, modelUsed: 'cic-v2' };
+    }
+  }
+
+  // Fallback: split by double newline into 3-4 options
+  const chunks = text.split(/\n{2,}/).map(c => c.trim()).filter(Boolean);
+  const replies = chunks.slice(0, 4).map((c, i) => ({
+    tone: ['Warm', 'Flirty', 'Playful', 'Direct'][i] || 'Reply ' + (i + 1),
+    text: c,
+  }));
+
+  return {
+    replies:   replies.length > 0 ? replies : [{ tone: 'Reply', text: text.trim() }],
+    modelUsed: 'cic-v2',
+  };
 }
