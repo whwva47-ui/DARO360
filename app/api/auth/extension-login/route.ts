@@ -6,76 +6,96 @@
  * Token is used by the popup to open cic-app.pages.dev/?token=TOKEN
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    console.error("Missing Supabase environment variables");
+    throw new Error("Supabase environment variables not set");
+  }
+
+  return createClient(url, key);
+}
 
 const ALLOWED_ORIGINS = [
-  `chrome-extension://dkgpheiimhedhdfandcgeogmbfmmiobp`,
-  'https://cic-app.pages.dev',
-  'http://localhost:3000',
+  "chrome-extension://dkgpheiimhedhdfandcgeogmbfmmiobp",
+  "[cic-app.pages.dev](https://cic-app.pages.dev)",
+  "[localhost](http://localhost:3000)",
 ];
 
 function cors(origin: string | null) {
-  const o = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const o =
+    origin && ALLOWED_ORIGINS.includes(origin)
+      ? origin
+      : ALLOWED_ORIGINS[0];
+
   return {
-    'Access-Control-Allow-Origin': o,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    "Access-Control-Allow-Origin": o,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
 export async function OPTIONS(req: NextRequest) {
-  return new NextResponse(null, { status: 204, headers: cors(req.headers.get('origin')) });
+  const origin = req.headers.get("origin");
+  return new NextResponse(null, { headers: cors(origin) });
 }
 
 export async function POST(req: NextRequest) {
-  const origin = req.headers.get('origin');
-  const h = cors(origin);
-
-  let email: string;
   try {
-    const body = await req.json();
-    email = (body.email ?? '').trim().toLowerCase();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request.' }, { status: 400, headers: h });
-  }
+    const origin = req.headers.get("origin");
+    const headers = cors(origin);
 
-  if (!email || !email.includes('@')) {
-    return NextResponse.json({ error: 'Email required.' }, { status: 400, headers: h });
-  }
+    const supabase = getSupabase();
 
-  // ── Look up in profiles (the real live user table) ────────────────────────
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id, email, plan, plan_status, trial_used')
-    .eq('email', email)
-    .maybeSingle();
+    const { email } = await req.json();
 
-  if (error || !profile) {
+    if (!email) {
+      return NextResponse.json(
+        { error: "Missing email" },
+        { status: 400, headers }
+      );
+    }
+
+    // Confirm profile exists
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Unauthorized user" },
+        { status: 403, headers }
+      );
+    }
+
+    // Generate 5-minute token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    await supabase.from("extension_tokens").insert({
+      token,
+      email,
+      expires_at: expires,
+    });
+
     return NextResponse.json(
-      { error: 'Email not registered. Sign up at chattersinnercircle.vercel.app first.' },
-      { status: 404, headers: h }
+      { token, expires_at: expires },
+      { status: 200, headers }
+    );
+  } catch (err: any) {
+    console.error("Extension login error:", err);
+    return NextResponse.json(
+      { error: "Server error", details: err.message },
+      { status: 500 }
     );
   }
-
-  // ── Generate short-lived token ────────────────────────────────────────────
-  const rawToken  = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-  await supabase.from('extension_tokens').insert({
-    user_id:    profile.id,
-    email:      profile.email,
-    token_hash: tokenHash,
-    expires_at: expiresAt.toISOString(),
-    used:       false,
-  });
-
-  return NextResponse.json({ token: rawToken }, { status: 200, headers: h });
 }
