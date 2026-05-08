@@ -197,37 +197,105 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Message is required.' }, { status: 400, headers: h });
   }
 
-  // ── Validate operator exists and has access ───────────────────
+  // ── Validate operator and enforce 3-tier plan system ────────────
+  // FREE   = 7-day trial: days 1-3 full Pro, days 4-7 reducing limit (20/day)
+  // BASIC  = $8/mo: 50 replies per 4 days, no explicit content, standard AI
+  // PRO    = $15/mo: unlimited, explicit content, premium AI
   if (userEmail) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('plan, plan_status, daily_generations, max_daily_generations, last_generation_date')
+      .select('plan, plan_status, daily_generations, max_daily_generations, last_generation_date, trial_ends_at, plan_expires_at, explicit_enabled, replies_per_period, period_days')
       .eq('email', userEmail)
       .maybeSingle();
 
-    if (profile) {
-      // Enforce daily generation limit for non-pro users
-      const today = new Date().toISOString().split('T')[0];
-      let dailyCount = profile.daily_generations || 0;
-      if (profile.last_generation_date !== today) dailyCount = 0;
+    if (profile && profile.plan_status === 'approved') {
+      const now   = new Date();
+      const today = now.toISOString().split('T')[0];
 
-      if (profile.plan !== 'pro' && dailyCount >= (profile.max_daily_generations || 10)) {
-        return NextResponse.json(
-          { error: 'Daily reply limit reached. Upgrade to Pro for unlimited replies.' },
-          { status: 403, headers: h }
-        );
+      // ── FREE TRIAL enforcement ──────────────────────────────────────
+      if (profile.plan === 'free') {
+        const trialEnd = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+
+        // Trial expired — lock them out
+        if (!trialEnd || now > trialEnd) {
+          return NextResponse.json(
+            { error: 'Your 7-day free trial has ended. Upgrade to Basic ($8/mo) or Pro ($15/mo) to continue.', upgrade: true },
+            { status: 403, headers: h }
+          );
+        }
+
+        // Days 1-3: full Pro access (unlimited)
+        // Days 4-7: reduced to 20/day
+        const trialStart = new Date(trialEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const dayOfTrial = Math.floor((now.getTime() - trialStart.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+        const dailyLimit = dayOfTrial <= 3 ? 999999 : 20;
+
+        let dailyCount = profile.daily_generations || 0;
+        if (profile.last_generation_date !== today) dailyCount = 0;
+
+        if (dailyCount >= dailyLimit) {
+          const msg = dayOfTrial <= 3
+            ? 'Daily limit reached.'
+            : \`Day \${dayOfTrial} of trial: 20 replies/day limit reached. Upgrade for unlimited access.\`;
+          return NextResponse.json({ error: msg, upgrade: true }, { status: 403, headers: h });
+        }
+
+        await supabase.from('profiles').update({
+          daily_generations:    dailyCount + 1,
+          last_generation_date: today,
+          total_generations:    (profile.total_generations || 0) + 1,
+        }).eq('email', userEmail);
       }
 
-      // Increment daily count
-      await supabase.from('profiles')
-        .update({
-          daily_generations:   dailyCount + 1,
+      // ── BASIC plan enforcement ──────────────────────────────────────
+      else if (profile.plan === 'basic') {
+        // Check plan has not expired
+        if (profile.plan_expires_at && now > new Date(profile.plan_expires_at)) {
+          return NextResponse.json(
+            { error: 'Your Basic plan has expired. Please renew to continue.', upgrade: true },
+            { status: 403, headers: h }
+          );
+        }
+
+        // 50 replies per 4 days
+        let dailyCount = profile.daily_generations || 0;
+        if (profile.last_generation_date !== today) dailyCount = 0;
+
+        if (dailyCount >= 50) {
+          return NextResponse.json(
+            { error: 'Basic plan: 50 replies per day limit reached. Upgrade to Pro for unlimited replies.', upgrade: true },
+            { status: 403, headers: h }
+          );
+        }
+
+        await supabase.from('profiles').update({
+          daily_generations:    dailyCount + 1,
           last_generation_date: today,
-          total_generations:   (profile as any).total_generations ? (profile as any).total_generations + 1 : 1,
-        })
-        .eq('email', userEmail);
+          total_generations:    (profile.total_generations || 0) + 1,
+        }).eq('email', userEmail);
+      }
+
+      // ── PRO plan enforcement ────────────────────────────────────────
+      else if (profile.plan === 'pro') {
+        // Check plan has not expired
+        if (profile.plan_expires_at && now > new Date(profile.plan_expires_at)) {
+          return NextResponse.json(
+            { error: 'Your Pro plan has expired. Please renew to continue.', upgrade: true },
+            { status: 403, headers: h }
+          );
+        }
+        // Unlimited — just increment counter for analytics
+        await supabase.from('profiles').update({
+          daily_generations:    (profile.daily_generations || 0) + 1,
+          last_generation_date: today,
+          total_generations:    (profile.total_generations || 0) + 1,
+        }).eq('email', userEmail);
+      }
     }
   }
+
+  // Pass plan info to prompt builder so Basic plan gets standard AI (no explicit)
+  const operatorPlan = pageContext.operatorPlan || 'free';
 
   const platform  = pageContext.platform || 'generic';
   const scenario  = pageContext.alphadateScenario || null;
@@ -289,6 +357,12 @@ function buildAlphadateUserPrompt(message: string, ctx: any, scenario: any): str
 // ── Generic platform system prompt ────────────────────────────────
 function buildGenericSystemPrompt(platform: string, ctx: any): string {
 
+  // Basic plan: no explicit content allowed
+  const isBasic = (ctx.operatorPlan === 'basic');
+  const explicitNote = isBasic
+    ? '- NO explicit, sexual, or adult content. Keep all replies clean and appropriate.'
+    : '';
+
   const tfRules = `Texting Factory / chathomebase.com (chathomebase.com). ABSOLUTE STRICT RULES — violating any of these will get the operator banned:
 
 CHARACTER COUNT — NON-NEGOTIABLE:
@@ -314,7 +388,7 @@ TONE AND QUALITY RULES:
   const platformRules: Record<string, string> = {
     chathomebase:   tfRules,
     textingfactory: tfRules,
-    onlyfans:  'OnlyFans platform. Replies can be warm to explicit depending on context. Keep replies personal — reference specific things he said. Match his energy. Upsell naturally when the opportunity arises.',
+    onlyfans:  isBasic ? 'OnlyFans platform. Keep replies warm and engaging. NO explicit content (Basic plan).' : 'OnlyFans platform. Replies can be warm to explicit depending on context. Keep replies personal — reference specific things he said. Match his energy. Upsell naturally when the opportunity arises.',
     fansly:    'Fansly platform. Similar to OnlyFans. Warm, engaging, personal. Can be explicit in adult context. Always reference something specific from the conversation.',
     loyalfans: 'LoyalFans platform. Similar to OnlyFans. Warm and personal. Reference what he said. Build connection over time.',
     fancentro: 'FanCentro platform. Warm, engaging, personal replies. Match his tone. Build rapport.',
@@ -373,38 +447,84 @@ function buildGenericUserPrompt(message: string, ctx: any): string {
 
 // ── AI caller ─────────────────────────────────────────────────────
 async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  // Use whichever AI provider is configured
-  // This example uses OpenAI-compatible endpoint — swap for Groq/Anthropic/Google as needed
-  const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || '';
-  const isGroq  = !!process.env.GROQ_API_KEY && !process.env.OPENAI_API_KEY;
+  // Try Groq first (llama), fall back to Google if Groq fails
+  const groqKey   = process.env.GROQ_API_KEY || '';
+  const googleKey = process.env.GOOGLE_AI_API_KEY || '';
+  const atKey     = process.env.AT_API_KEY || ''; // Anthropic
 
-  const endpoint = isGroq
-    ? 'https://api.groq.com/openai/v1/chat/completions'
-    : 'https://api.openai.com/v1/chat/completions';
-
-  const model = isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
-
-  const res = await fetch(endpoint, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-    body: JSON.stringify({
-      model,
-      max_tokens:   600,
-      temperature:  0.85,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt   },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error('AI API error ' + res.status + ': ' + err.substring(0, 100));
+  // Groq — primary (fast, cheap, capable)
+  if (groqKey) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
+        body: JSON.stringify({
+          model:       'llama-3.1-8b-instant', // faster and more reliable than 70b for this use case
+          max_tokens:  800,
+          temperature: 0.85,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt   },
+          ],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || '';
+        if (text.length > 10) return text;
+      } else {
+        const errText = await res.text();
+        console.warn('[generate] Groq 8b failed:', res.status, errText.substring(0, 100));
+        // Try larger model as fallback
+        const res2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
+          body: JSON.stringify({
+            model:       'llama-3.3-70b-versatile',
+            max_tokens:  800,
+            temperature: 0.85,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user',   content: userPrompt   },
+            ],
+          }),
+        });
+        if (res2.ok) {
+          const data2 = await res2.json();
+          const text2 = data2.choices?.[0]?.message?.content || '';
+          if (text2.length > 10) return text2;
+        }
+      }
+    } catch (e) {
+      console.warn('[generate] Groq error:', e);
+    }
   }
 
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  // Google Gemini — fallback
+  if (googleKey) {
+    try {
+      const res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + googleKey,
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }],
+            generationConfig: { maxOutputTokens: 800, temperature: 0.85 },
+          }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (text.length > 10) return text;
+      }
+    } catch (e) {
+      console.warn('[generate] Google AI error:', e);
+    }
+  }
+
+  throw new Error('All AI providers failed. Check API keys in Vercel environment variables.');
 }
 
 // ── Response parser ────────────────────────────────────────────────
