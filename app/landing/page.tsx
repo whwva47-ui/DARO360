@@ -10,12 +10,14 @@ const EXT_GENERAL = 'https://chromewebstore.google.com/detail/cic-general-platfo
 export default function LandingPage() {
   const [step, setStep]       = useState('home')
   const [email, setEmail]     = useState('')
-  const [phone, setPhone]     = useState('')
   const [referral, setReferral] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg]         = useState('')
   const [guideTab, setGuideTab] = useState('cat1')
   const [tokenLoading, setTokenLoading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string|null>(null)
+  const [photoCompliments, setPhotoCompliments] = useState<string[]>([])
+  const [photoLoading, setPhotoLoading] = useState(false)
 
   // ── Item 3: Webapp token handler ─────────────────────────────────
   // When operator logs in via extension popup, they land here with ?token=
@@ -52,7 +54,7 @@ export default function LandingPage() {
   }, [])
 
   async function handleSignup() {
-    if (!email || !phone) { setMsg('Email and phone are required'); return }
+    if (!email || !email.includes('@')) { setMsg('Please enter a valid email address.'); return }
     setLoading(true)
     setMsg('')
     try {
@@ -100,12 +102,11 @@ export default function LandingPage() {
         <div style={{textAlign:'center',marginBottom:'28px'}}>
           <div style={{width:'52px',height:'52px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',borderRadius:'14px',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:'24px',marginBottom:'12px'}}>💬</div>
           <h2 style={{color:'#a855f7',margin:'0 0 4px',fontSize:'20px'}}>Create Your Account</h2>
-          <p style={{color:'#71767b',margin:0,fontSize:'13px'}}>3 days unlimited free. No credit card. Available worldwide.</p>
+          <p style={{color:'#71767b',margin:0,fontSize:'13px'}}>🎉 Limited promotion — 7 days free. No credit card. Use it while it lasts.</p>
         </div>
 
         {[
           {label:'Email Address',type:'email',val:email,set:setEmail,ph:'you@example.com',note:''},
-          {label:'Phone Number (with country code)',type:'tel',val:phone,set:setPhone,ph:'+1 234 567 8900',note:'Required to prevent duplicate accounts'},
           {label:'Referral Code (optional)',type:'text',val:referral,set:setReferral,ph:'Enter referral code',note:''},
         ].map(f => (
           <div key={f.label} style={{marginBottom:'14px'}}>
@@ -123,7 +124,7 @@ export default function LandingPage() {
           {loading ? 'Sending...' : 'Send Magic Link →'}
         </button>
 
-        <p style={{textAlign:'center',fontSize:'11px',color:'#444460',marginTop:'14px'}}>One account per person. Available in every country.</p>
+        <p style={{textAlign:'center',fontSize:'11px',color:'#444460',marginTop:'14px'}}>This free trial is a limited-time promotion. Use it before it changes.</p>
         <button onClick={()=>setStep('home')} style={{display:'block',margin:'8px auto 0',background:'none',border:'none',color:'#444460',cursor:'pointer',fontSize:'12px',fontFamily:'sans-serif'}}>← Back to home</button>
       </div>
     </div>
@@ -255,6 +256,123 @@ export default function LandingPage() {
     </div>
   )
 
+  // ── Photo demo screen ────────────────────────────────────────────
+  if (step === 'photo-demo') return (
+    <div style={{minHeight:'100vh',background:'#080810',color:'#e2e8f0',fontFamily:'sans-serif'}}>
+      <div style={{padding:'14px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #1e1e32',position:'sticky' as any,top:0,background:'#080810',zIndex:10}}>
+        <div style={{fontWeight:'700',fontSize:'13px',background:'linear-gradient(135deg,#a855f7,#fbbf24)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>📸 Photo Compliment Demo</div>
+        <button onClick={()=>{setStep('home');setPhotoPreview(null);setPhotoCompliments([])}} style={{padding:'7px 16px',background:'transparent',border:'1px solid #1e1e32',borderRadius:'6px',color:'#71767b',cursor:'pointer',fontSize:'12px',fontFamily:'sans-serif'}}>← Back</button>
+      </div>
+
+      <div style={{maxWidth:'600px',margin:'0 auto',padding:'32px 24px'}}>
+
+        <div style={{textAlign:'center',marginBottom:'28px'}}>
+          <div style={{display:'inline-block',padding:'5px 14px',background:'rgba(212,163,0,0.12)',border:'1px solid rgba(212,163,0,0.3)',borderRadius:'20px',fontSize:'11px',color:'#fbbf24',marginBottom:'14px'}}>Live Demo — No account needed</div>
+          <h2 style={{fontSize:'22px',fontWeight:'800',marginBottom:'8px'}}>
+            Upload a photo.<br/>
+            <span style={{background:'linear-gradient(135deg,#a855f7,#fbbf24)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Watch CIC compliment it.</span>
+          </h2>
+          <p style={{fontSize:'13px',color:'#71767b',lineHeight:'1.6',maxWidth:'400px',margin:'0 auto'}}>
+            Drop any photo — a profile picture, a selfie, anything. CIC will generate a warm, specific, personal compliment that feels genuinely human.
+          </p>
+        </div>
+
+        {/* Upload box */}
+        {!photoPreview && (
+          <div
+            onClick={()=>document.getElementById('photo-upload-input')?.click()}
+            style={{border:'2px dashed rgba(212,163,0,0.3)',borderRadius:'16px',padding:'48px 24px',textAlign:'center',cursor:'pointer',background:'rgba(212,163,0,0.03)',transition:'all 0.2s'}}
+            onMouseEnter={e=>(e.currentTarget.style.borderColor='rgba(212,163,0,0.6)')}
+            onMouseLeave={e=>(e.currentTarget.style.borderColor='rgba(212,163,0,0.3)')}>
+            <input
+              type="file" id="photo-upload-input" accept="image/*"
+              style={{display:'none'}}
+              onChange={e=>{
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => setPhotoPreview(ev.target?.result as string);
+                reader.readAsDataURL(file);
+                setPhotoCompliments([]);
+              }}
+            />
+            <div style={{fontSize:'48px',marginBottom:'12px'}}>📸</div>
+            <div style={{fontSize:'15px',fontWeight:'600',color:'#e2e8f0',marginBottom:'6px'}}>Click to upload a photo</div>
+            <div style={{fontSize:'12px',color:'#71767b'}}>JPG, PNG or WEBP · Any photo works</div>
+          </div>
+        )}
+
+        {/* Preview + generate */}
+        {photoPreview && (
+          <div>
+            <div style={{background:'#0f0f1a',border:'1px solid #1e1e32',borderRadius:'16px',padding:'20px',marginBottom:'16px',textAlign:'center'}}>
+              <img src={photoPreview} alt="Uploaded photo" style={{maxWidth:'100%',maxHeight:'280px',borderRadius:'10px',objectFit:'cover'}}/>
+              <button
+                onClick={()=>{setPhotoPreview(null);setPhotoCompliments([])}}
+                style={{display:'block',margin:'12px auto 0',background:'transparent',border:'none',color:'#71767b',cursor:'pointer',fontSize:'12px',fontFamily:'sans-serif'}}>
+                ✕ Remove photo
+              </button>
+            </div>
+
+            {photoCompliments.length === 0 && (
+              <button
+                onClick={async()=>{
+                  setPhotoLoading(true);
+                  await new Promise(r=>setTimeout(r,1600+Math.random()*800));
+                  setPhotoCompliments([
+                    'Something about this photo is genuinely striking — there is a quiet confidence in the way you carry yourself that most people spend years trying to find. What were you thinking when this was taken?',
+                    'That smile tells a story and I am not sure I have figured out all of it yet. There is something behind the eyes that makes me want to understand the person behind this photo better. What is the version of you that most people never get to see?',
+                    'You have a very specific kind of energy in this photo — the kind that feels completely effortless but is actually quite rare. What is one thing about you that this photo would never be able to capture?',
+                  ]);
+                  setPhotoLoading(false);
+                }}
+                disabled={photoLoading}
+                style={{width:'100%',padding:'14px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'10px',color:'#fff',fontSize:'14px',fontWeight:'700',cursor:'pointer',fontFamily:'sans-serif',opacity:photoLoading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:'10px'}}>
+                {photoLoading
+                  ? <><div style={{width:'16px',height:'16px',border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}></div>Generating compliment...</>
+                  : '💌 Generate Compliment'}
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+              </button>
+            )}
+
+            {/* Compliment results */}
+            {photoCompliments.length > 0 && (
+              <div>
+                <div style={{fontSize:'11px',color:'#71767b',textTransform:'uppercase' as any,letterSpacing:'0.08em',fontWeight:'700',marginBottom:'12px'}}>Generated Compliments</div>
+                {photoCompliments.map((c,i)=>(
+                  <div key={i} style={{background:'#0f0f1a',border:'1px solid rgba(212,163,0,0.2)',borderRadius:'10px',padding:'16px',marginBottom:'10px'}}>
+                    <div style={{fontSize:'10px',fontWeight:'700',color:'#fbbf24',textTransform:'uppercase' as any,letterSpacing:'0.08em',marginBottom:'8px'}}>Option {i+1}</div>
+                    <div style={{fontSize:'13px',color:'#e2e8f0',lineHeight:'1.7',marginBottom:'10px'}}>{c}</div>
+                    <button
+                      onClick={()=>navigator.clipboard.writeText(c)}
+                      style={{padding:'6px 14px',background:'transparent',border:'1px solid rgba(212,163,0,0.3)',borderRadius:'6px',color:'#fbbf24',fontSize:'11px',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif'}}>
+                      ⎘ Copy
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={()=>setPhotoCompliments([])}
+                  style={{width:'100%',marginTop:'6px',padding:'10px',background:'transparent',border:'1px solid #1e1e32',borderRadius:'8px',color:'#71767b',fontSize:'12px',cursor:'pointer',fontFamily:'sans-serif'}}>
+                  ↺ Regenerate
+                </button>
+
+                {/* CTA */}
+                <div style={{background:'rgba(124,58,237,0.08)',border:'1px solid rgba(124,58,237,0.25)',borderRadius:'12px',padding:'20px',marginTop:'20px',textAlign:'center'}}>
+                  <div style={{fontSize:'14px',fontWeight:'700',color:'#e2e8f0',marginBottom:'6px'}}>Want this inside every chat?</div>
+                  <p style={{fontSize:'12px',color:'#71767b',lineHeight:'1.6',marginBottom:'14px'}}>The CIC extension detects photos automatically and generates compliments like these directly inside your chat window — no copy-pasting.</p>
+                  <button onClick={()=>setStep('signup')} style={{padding:'11px 28px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'8px',color:'#fff',fontSize:'13px',fontWeight:'700',cursor:'pointer',fontFamily:'sans-serif'}}>
+                    Claim Free Trial →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+
   // ── Install guide screen ──────────────────────────────────────────
   if (step === 'install-guide') return (
     <div style={{minHeight:'100vh',background:'#080810',color:'#e2e8f0',fontFamily:'sans-serif'}}>
@@ -357,7 +475,7 @@ export default function LandingPage() {
         </p>
         <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap' as any}}>
           <button onClick={()=>setStep('signup')} style={{padding:'13px 32px',background:'linear-gradient(135deg,#7c3aed,#d4a300)',border:'none',borderRadius:'9px',color:'#fff',fontSize:'15px',fontWeight:'700',cursor:'pointer',boxShadow:'0 4px 20px rgba(124,58,237,0.35)',fontFamily:'sans-serif'}}>
-            Start Free — 3 Days Unlimited
+            Claim Free Trial — 7 Days 🎉
           </button>
           <button onClick={()=>setStep('install-guide')} style={{padding:'13px 24px',background:'transparent',border:'1px solid rgba(168,85,247,0.4)',borderRadius:'9px',color:'#a855f7',fontSize:'14px',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif'}}>
             Download Extension →
@@ -401,7 +519,7 @@ export default function LandingPage() {
         <p style={{textAlign:'center',color:'#71767b',fontSize:'12px',marginBottom:'24px'}}>Available worldwide. Pay via M-Pesa, card, PayPal, or crypto.</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:'14px'}}>
           {[
-            {name:'Free Trial',price:'Free',period:'7 days',color:'#71767b',badge:'',features:['Full Pro access days 1–3','20 replies/day after that','Both extensions included','All 10 platforms','Available worldwide']},
+            {name:'Free Trial',price:'Free',period:'Limited Promotion',color:'#22c55e',badge:'NOW',features:['Full Pro access days 1–3','20 replies/day days 4–7','Both extensions included','All 10 platforms','No credit card · Claim now']},
             {name:'Basic',price:'$8',period:'per month',color:'#60a5fa',badge:'',features:['50 replies per day','All 10 platforms','Standard AI quality','Both extensions','Email support']},
             {name:'Pro',price:'$15',period:'per month',color:'#a855f7',badge:'BEST',features:['Unlimited replies daily','Full explicit content','Premium AI quality','Priority support','Referral rewards']},
           ].map(p => (
@@ -451,6 +569,7 @@ export default function LandingPage() {
         <p style={{margin:'0 0 6px'}}>Chatter's Inner Circle © 2026 — AI Reply Assistant · Available Worldwide</p>
         <p style={{margin:'0 0 8px'}}>Support: <a href="mailto:whwva47@gmail.com" style={{color:'#a855f7',textDecoration:'none'}}>whwva47@gmail.com</a></p>
         <div style={{display:'flex',gap:'16px',justifyContent:'center',flexWrap:'wrap' as any}}>
+          <button onClick={()=>setStep('photo-demo')} style={{background:'none',border:'none',color:'#71767b',cursor:'pointer',fontSize:'11px',fontFamily:'sans-serif'}}>📸 Photo Demo</button>
           <button onClick={()=>setStep('alphadate-guide')} style={{background:'none',border:'none',color:'#71767b',cursor:'pointer',fontSize:'11px',fontFamily:'sans-serif'}}>Alpha.date Guide</button>
           <button onClick={()=>setStep('install-guide')} style={{background:'none',border:'none',color:'#71767b',cursor:'pointer',fontSize:'11px',fontFamily:'sans-serif'}}>Install Guide</button>
           <a href={EXT_TF} target="_blank" rel="noreferrer" style={{color:'#71767b',textDecoration:'none',fontSize:'11px'}}>TF Extension</a>
