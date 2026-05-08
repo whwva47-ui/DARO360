@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
         if (dailyCount >= dailyLimit) {
           const msg = dayOfTrial <= 3
             ? 'Daily limit reached.'
-            : \`Day \${dayOfTrial} of trial: 20 replies/day limit reached. Upgrade for unlimited access.\`;
+            : `Day ${dayOfTrial} of trial: 20 replies/day limit reached. Upgrade for unlimited access.`;
           return NextResponse.json({ error: msg, upgrade: true }, { status: 403, headers: h });
         }
 
