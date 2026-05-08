@@ -30,7 +30,7 @@ function cors(origin: string | null) {
   return {
     'Access-Control-Allow-Origin': o,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Email',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Email, X-API-Key, Authorization',
   };
 }
 
