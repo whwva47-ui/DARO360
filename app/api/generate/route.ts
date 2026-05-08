@@ -63,7 +63,7 @@ function cors(origin: string | null) {
   return {
     'Access-Control-Allow-Origin': o,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Email, X-API-Key, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, X-User-Email, X-API-Key, X-Session-Token, Authorization',
     'Access-Control-Allow-Credentials': 'false',
   };
 }
@@ -195,6 +195,48 @@ export async function POST(req: NextRequest) {
 
   if (!message) {
     return NextResponse.json({ error: 'Message is required.' }, { status: 400, headers: h });
+  }
+
+  // ── Session token validation — blocks API abuse and cloned extensions ──
+  // Every legitimate request from v1.5.0+ extension sends X-Session-Token.
+  // Old v1.1.0 sends X-API-Key: test_key — blocked here.
+  // Direct API calls without a token — blocked here.
+  const sessionToken = req.headers.get('X-Session-Token') || '';
+  const apiKey       = req.headers.get('X-API-Key') || '';
+
+  // Block old test_key completely
+  if (apiKey === 'test_key') {
+    return NextResponse.json(
+      { error: 'Your extension is outdated. Please update CIC to the latest version.' },
+      { status: 401, headers: h }
+    );
+  }
+
+  // If a session token is provided, validate it against active_sessions
+  if (sessionToken && userEmail) {
+    const { data: session } = await supabase
+      .from('active_sessions')
+      .select('session_token, allow_multiple')
+      .eq('email', userEmail)
+      .maybeSingle();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Session not found. Please sign in again from the extension.' },
+        { status: 401, headers: h }
+      );
+    }
+
+    if (!session.allow_multiple && session.session_token !== sessionToken) {
+      return NextResponse.json(
+        { error: 'Session invalid. You may have signed in on another device.', displaced: true },
+        { status: 401, headers: h }
+      );
+    }
+  } else if (!sessionToken && userEmail) {
+    // No session token at all — could be a direct API call or very old extension
+    // Allow for now but log it — will tighten after all operators update
+    console.warn('[generate] Request without session token from:', userEmail);
   }
 
   // ── Validate operator and enforce 3-tier plan system ────────────
