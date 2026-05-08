@@ -18,19 +18,53 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Platform domains where content scripts run — these become the request origin
 const ALLOWED_ORIGINS = [
-  `chrome-extension://dkgpheiimhedhdfandcgeogmbfmmiobp`,
+  // Extension popup (direct fetch from popup.js)
+  'chrome-extension://dkgpheiimhedhdfandcgeogmbfmmiobp',
+  // CIC web apps
   'https://cic-app.pages.dev',
   'https://chattersinnercircle.vercel.app',
+  // Texting Factory / chathomebase
+  'https://chathomebase.com',
+  'https://www.chathomebase.com',
+  'https://textingfactory.com',
+  // Alpha.date
+  'https://alpha.date',
+  'https://www.alpha.date',
+  // OnlyFans
+  'https://onlyfans.com',
+  // Fansly
+  'https://fansly.com',
+  // LoyalFans
+  'https://loyalfans.com',
+  // FanCentro
+  'https://fancentro.com',
+  // AdmireMe
+  'https://admireme.vip',
+  // FanVue
+  'https://fanvue.com',
+  // ManyVids
+  'https://www.manyvids.com',
+  // Unlockd
+  'https://unlockd.com',
+  // Cloudworkers / Emoderators
+  'https://agents.moderationinterface.com',
+  // Dev
   'http://localhost:3000',
 ];
 
 function cors(origin: string | null) {
-  const o = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  // If origin is in our allowed list, echo it back exactly.
+  // If not (or null — same-origin / server-side calls), allow cic-app.pages.dev.
+  const o = origin && ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : 'https://cic-app.pages.dev';
   return {
     'Access-Control-Allow-Origin': o,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-User-Email, X-API-Key, Authorization',
+    'Access-Control-Allow-Credentials': 'false',
   };
 }
 
