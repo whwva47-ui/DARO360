@@ -22,7 +22,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 
 
 export const dynamic = 'force-dynamic';
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
   // ── 1. Log to Supabase ─────────────────────────────────────────────
   try {
     const supabase = getSupabase();
-    await supabase.from('pro_requests').insert({
+    await getSupabase().from('pro_requests').insert({
       email,
       payment_method: paymentMethod || null,
       request_type:   requestType,
