@@ -481,6 +481,40 @@ export default function LandingPage() {
             Download Extension →
           </button>
         </div>
+
+        {/* Photo demo CTA */}
+        <div style={{marginTop:'20px'}}>
+          <button onClick={()=>setStep('photo-demo')}
+            style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'10px 22px',background:'rgba(212,163,0,0.1)',border:'1px solid rgba(212,163,0,0.35)',borderRadius:'30px',color:'#fbbf24',fontSize:'13px',fontWeight:'600',cursor:'pointer',fontFamily:'sans-serif',transition:'all 0.2s'}}>
+            📸 Try it — upload a photo and see how CIC compliments it
+          </button>
+        </div>
+      </div>
+
+      {/* Photo Demo Feature Section */}
+      <div style={{maxWidth:'680px',margin:'0 auto',padding:'0 24px 56px'}}>
+        <div style={{background:'rgba(212,163,0,0.06)',border:'1px solid rgba(212,163,0,0.2)',borderRadius:'16px',padding:'28px',textAlign:'center'}}>
+          <div style={{display:'inline-block',padding:'5px 14px',background:'rgba(212,163,0,0.15)',border:'1px solid rgba(212,163,0,0.3)',borderRadius:'20px',fontSize:'11px',color:'#fbbf24',marginBottom:'14px',fontWeight:'600'}}>
+            LIVE DEMO — Try it yourself
+          </div>
+          <h2 style={{fontSize:'20px',fontWeight:'700',marginBottom:'10px',color:'#e2e8f0'}}>
+            Upload a photo. Watch CIC compliment it.
+          </h2>
+          <p style={{fontSize:'13px',color:'#71767b',lineHeight:'1.7',maxWidth:'460px',margin:'0 auto 20px'}}>
+            Drop any photo — a profile picture, a selfie, anything. CIC reads the image and generates a warm, specific, personal compliment that feels genuinely human. This is exactly what the extension does inside the chat window.
+          </p>
+          <button onClick={()=>setStep('photo-demo')}
+            style={{padding:'13px 32px',background:'linear-gradient(135deg,#d4a300,#fbbf24)',border:'none',borderRadius:'9px',color:'#0a0a1a',fontSize:'14px',fontWeight:'700',cursor:'pointer',fontFamily:'sans-serif',boxShadow:'0 4px 20px rgba(212,163,0,0.35)'}}>
+            📸 Upload a Photo — See the Magic
+          </button>
+          <div style={{display:'flex',gap:'20px',justifyContent:'center',marginTop:'16px',flexWrap:'wrap' as any}}>
+            {['Reads the photo intelligently','Generates 3 specific options','Feels genuinely personal, not generic'].map((f,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'11px',color:'#71767b'}}>
+                <span style={{color:'#fbbf24'}}>✓</span>{f}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Extensions — Item 1: real Chrome Web Store links */}
