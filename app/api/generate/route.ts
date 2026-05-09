@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 
 
 export const dynamic = 'force-dynamic';
@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
 
   // If a session token is provided, validate it against active_sessions
   if (sessionToken && userEmail) {
-    const { data: session } = await supabase
+    const { data: session } = await getSupabase()
       .from('active_sessions')
       .select('session_token, allow_multiple')
       .eq('email', userEmail)
@@ -248,7 +248,7 @@ export async function POST(req: NextRequest) {
   // BASIC  = $8/mo: 50 replies per 4 days, no explicit content, standard AI
   // PRO    = $15/mo: unlimited, explicit content, premium AI
   if (userEmail) {
-    const { data: profile } = await supabase
+    const { data: profile } = await getSupabase()
       .from('profiles')
       .select('plan, plan_status, daily_generations, max_daily_generations, last_generation_date, trial_ends_at, plan_expires_at, explicit_enabled, replies_per_period, period_days')
       .eq('email', userEmail)
