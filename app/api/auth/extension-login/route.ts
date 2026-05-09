@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 import crypto from 'crypto';
 
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email required.' }, { status: 400, headers: h });
   }
 
-  const { data: profile, error } = await supabase
+  const { data: profile, error } = await getSupabase()
     .from('profiles')
     .select('id, email, plan, plan_status')
     .eq('email', email)
