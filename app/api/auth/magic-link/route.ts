@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await getSupabase().auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo:  `${SITE_URL}/landing`,
