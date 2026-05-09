@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 import crypto from 'crypto';
 
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-  const { data: record, error: lookupErr } = await supabase
+  const { data: record, error: lookupErr } = await getSupabase()
     .from('extension_tokens')
     .select('id, user_id, email, expires_at, used')
     .eq('token_hash', tokenHash)
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   // Mark used — single use only
   await getSupabase().from('extension_tokens').update({ used: true }).eq('id', record.id);
 
-  const { data: profile, error: profileErr } = await supabase
+  const { data: profile, error: profileErr } = await getSupabase()
     .from('profiles')
     .select('id, email, plan, plan_status, trial_ends_at, plan_expires_at, daily_generations, max_daily_generations, total_generations')
     .eq('id', record.user_id)
