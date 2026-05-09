@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 import crypto from 'crypto';
 
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Fetch full profile ─────────────────────────────────────────────────────
-  const { data: profile, error: profileErr } = await supabase
+  const { data: profile, error: profileErr } = await getSupabase()
     .from('profiles')
     .select('id, email, plan, plan_status, trial_ends_at, plan_expires_at, daily_generations, max_daily_generations, total_generations')
     .eq('email', email)
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Check allow_multiple_devices from operators table ────────────────────
-  const { data: operatorRow } = await supabase
+  const { data: operatorRow } = await getSupabase()
     .from('operators')
     .select('allow_multiple_devices')
     .eq('email', email)
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
   // ── Generate session token and write to active_sessions (device lock) ─────
   const sessionToken = crypto.randomBytes(32).toString('hex');
 
-  await supabase
+  await getSupabase()
     .from('active_sessions')
     .upsert(
       {
