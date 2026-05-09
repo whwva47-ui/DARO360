@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 
 
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const sessionToken = (body.session_token  ?? '').trim();
 
     if (email && sessionToken) {
-      await supabase
+      await getSupabase()
         .from('active_sessions')
         .delete()
         .eq('email', email)
