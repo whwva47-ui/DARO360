@@ -13,10 +13,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // Platform domains where content scripts run — these become the request origin
 const ALLOWED_ORIGINS = [
@@ -282,7 +284,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: msg, upgrade: true }, { status: 403, headers: h });
         }
 
-        await supabase.from('profiles').update({
+        await getSupabase().from('profiles').update({
           daily_generations:    dailyCount + 1,
           last_generation_date: today,
           total_generations:    (profile.total_generations || 0) + 1,
@@ -310,7 +312,7 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        await supabase.from('profiles').update({
+        await getSupabase().from('profiles').update({
           daily_generations:    dailyCount + 1,
           last_generation_date: today,
           total_generations:    (profile.total_generations || 0) + 1,
@@ -327,7 +329,7 @@ export async function POST(req: NextRequest) {
           );
         }
         // Unlimited — just increment counter for analytics
-        await supabase.from('profiles').update({
+        await getSupabase().from('profiles').update({
           daily_generations:    (profile.daily_generations || 0) + 1,
           last_generation_date: today,
           total_generations:    (profile.total_generations || 0) + 1,
@@ -336,8 +338,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Pass plan info to prompt builder so Basic plan gets standard AI (no explicit)
-  const operatorPlan = pageContext.operatorPlan || 'free';
 
   const platform  = pageContext.platform || 'generic';
   const scenario  = pageContext.alphadateScenario || null;
@@ -358,7 +358,7 @@ export async function POST(req: NextRequest) {
     userPrompt   = buildAlphadateUserPrompt(message, pageContext, scenario);
   } else {
     // Other platforms — generic chatter assistant
-    systemPrompt = buildGenericSystemPrompt(platform, pageContext);
+    systemPrompt = buildGenericSystemPrompt(platform);
     userPrompt   = buildGenericUserPrompt(message, pageContext);
   }
 
@@ -397,13 +397,7 @@ function buildAlphadateUserPrompt(message: string, ctx: any, scenario: any): str
 }
 
 // ── Generic platform system prompt ────────────────────────────────
-function buildGenericSystemPrompt(platform: string, ctx: any): string {
-
-  // Basic plan: no explicit content allowed
-  const isBasic = (ctx.operatorPlan === 'basic');
-  const explicitNote = isBasic
-    ? '- NO explicit, sexual, or adult content. Keep all replies clean and appropriate.'
-    : '';
+function buildGenericSystemPrompt(platform: string): string {
 
   const tfRules = `Texting Factory / chathomebase.com (chathomebase.com). ABSOLUTE STRICT RULES — violating any of these will get the operator banned:
 
@@ -430,7 +424,7 @@ TONE AND QUALITY RULES:
   const platformRules: Record<string, string> = {
     chathomebase:   tfRules,
     textingfactory: tfRules,
-    onlyfans:  isBasic ? 'OnlyFans platform. Keep replies warm and engaging. NO explicit content (Basic plan).' : 'OnlyFans platform. Replies can be warm to explicit depending on context. Keep replies personal — reference specific things he said. Match his energy. Upsell naturally when the opportunity arises.',
+    onlyfans:  'OnlyFans platform. Replies can be warm to explicit depending on context. Keep replies personal — reference specific things he said. Match his energy. Upsell naturally when the opportunity arises.', Keep replies personal — reference specific things he said. Match his energy. Upsell naturally when the opportunity arises.',
     fansly:    'Fansly platform. Similar to OnlyFans. Warm, engaging, personal. Can be explicit in adult context. Always reference something specific from the conversation.',
     loyalfans: 'LoyalFans platform. Similar to OnlyFans. Warm and personal. Reference what he said. Build connection over time.',
     fancentro: 'FanCentro platform. Warm, engaging, personal replies. Match his tone. Build rapport.',
