@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@getSupabase()/getSupabase()-js';
 
 
 export const dynamic = 'force-dynamic';
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'email and session_token required.' }, { status: 400, headers: h });
   }
 
-  const { data: session, error } = await supabase
+  const { data: session, error } = await getSupabase()
     .from('active_sessions')
     .select('session_token, allow_multiple')
     .eq('email', email)
