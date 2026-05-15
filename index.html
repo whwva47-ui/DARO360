@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d4a2f">
+<title>DARO360 - Jitihada Senior School</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--gd:#0d4a2f;--gm:#155e3a;--gl:#1e7a4a;--gp:#e8f5ee;--gold:#c8952a;--goldf:#f0b429;--white:#ffffff;--off:#f7faf8;--text:#1a2e22;--muted:#5a7a65;--border:#d0e4d8;--card:#ffffff;--red:#c0392b;--redbg:#fdf2f2;--amber:#d97706;--amberbg:#fffbeb;--blue:#1d6fa4;--bluebg:#eff6ff;--r:10px;--sidebar:220px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--off);}
+#login-screen{position:fixed;inset:0;z-index:1000;background:var(--gd);display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.login-card{background:var(--white);border-radius:16px;padding:40px 36px;width:min(420px,92vw);box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.login-logo{font-family:'Libre Baskerville',serif;font-size:1.8rem;font-weight:700;color:var(--gd);margin-bottom:4px;}
+.login-logo span{color:var(--gold);}
+.login-school{font-size:0.78rem;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:28px;}
+.login-label{font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:block;}
+.login-select{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:0.95rem;color:var(--text);background:var(--off);margin-bottom:16px;appearance:none;}
+.login-select:focus{outline:none;border-color:var(--gl);}
+.login-btn{width:100%;padding:13px;background:var(--gd);color:var(--white);border:none;border-radius:8px;font-size:0.95rem;font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px;}
+.login-btn:hover{background:var(--gm);}
+.pin-row{display:none;gap:8px;margin-bottom:16px;}
+.pin-row input{flex:1;padding:11px;text-align:center;font-size:1.2rem;font-weight:700;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--off);color:var(--text);}
+.pin-hint{font-size:0.75rem;color:var(--muted);margin-bottom:12px;display:none;}
+#app{display:none;height:100vh;flex-direction:row;}
+#app.visible{display:flex;}
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--gd);display:flex;flex-direction:column;overflow-y:auto;border-right:3px solid var(--gold);}
+.sidebar-logo{padding:20px 18px 16px;font-family:'Libre Baskerville',serif;font-size:1.2rem;font-weight:700;color:var(--white);border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo span{color:var(--goldf);}
+.sidebar-school{font-size:0.62rem;color:rgba(255,255,255,0.45);font-weight:500;letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+.sidebar-user{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:0.78rem;color:rgba(255,255,255,0.6);}
+.sidebar-user strong{display:block;color:var(--white);font-size:0.85rem;margin-bottom:1px;}
+.sidebar-nav{flex:1;padding:10px 0;}
+.nav-section{padding:8px 18px 4px;font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.3);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:0.85rem;font-weight:500;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:var(--white);}
+.nav-item.active{background:rgba(255,255,255,0.1);color:var(--white);border-left-color:var(--goldf);}
+.nav-icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0;}
+.sidebar-logout{padding:14px 18px;border-top:1px solid rgba(255,255,255,0.08);font-size:0.82rem;color:rgba(255,255,255,0.45);cursor:pointer;display:flex;align-items:center;gap:8px;}
+.sidebar-logout:hover{color:rgba(255,255,255,0.8);}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{padding:14px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-family:'Libre Baskerville',serif;font-size:1.1rem;font-weight:700;color:var(--gd);}
+.topbar-date{font-size:0.78rem;color:var(--muted);}
+.content{padding:24px;flex:1;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
+.card-title{font-family:'Libre Baskerville',serif;font-size:0.95rem;font-weight:700;color:var(--gd);margin-bottom:14px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;border-left:4px solid var(--gl);}
+.stat-num{font-family:'Libre Baskerville',serif;font-size:2rem;font-weight:700;color:var(--gd);line-height:1;}
+.stat-label{font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.04em;}
+.bg{background:rgba(30,122,74,0.1);color:var(--gl);border:1px solid rgba(30,122,74,0.2);}
+.ba{background:var(--amberbg);color:var(--amber);border:1px solid rgba(217,119,6,0.2);}
+.br{background:var(--redbg);color:var(--red);border:1px solid rgba(192,57,43,0.2);}
+.bb{background:var(--bluebg);color:var(--blue);border:1px solid rgba(29,111,164,0.2);}
+.bgr{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fl{font-size:0.7rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);}
+.fi,.fs,.ft{padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:0.88rem;color:var(--text);background:var(--off);transition:border-color 0.2s;width:100%;}
+.fs{appearance:none;}
+.ft{resize:vertical;min-height:80px;}
+.fi:focus,.fs:focus,.ft:focus{outline:none;border-color:var(--gl);box-shadow:0 0 0 3px rgba(30,122,74,0.1);}
+.btn{padding:9px 20px;border-radius:7px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:7px;}
+.btn-p{background:var(--gd);color:var(--white);}
+.btn-p:hover{background:var(--gm);}
+.btn-s{background:transparent;color:var(--gd);border:1px solid var(--gd);}
+.btn-s:hover{background:var(--gp);}
+.btn-d{background:var(--red);color:var(--white);}
+.btn-d:hover{background:#a93226;}
+.btn-g{background:var(--gold);color:var(--white);}
+.btn-g:hover{background:var(--goldf);color:var(--gd);}
+.btn-sm{padding:5px 12px;font-size:0.78rem;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+th{text-align:left;padding:9px 12px;font-size:0.7rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);background:var(--off);border-bottom:2px solid var(--border);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--gp);}
+.reg-student{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;}
+.reg-student:last-child{border-bottom:none;}
+.reg-name{font-weight:600;font-size:0.88rem;min-width:150px;}
+.reg-adm{font-size:0.75rem;color:var(--muted);}
+.reg-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.rb{padding:5px 12px;border-radius:5px;font-size:0.75rem;font-weight:700;border:1px solid transparent;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.rb-p{background:rgba(30,122,74,0.1);color:var(--gl);border-color:rgba(30,122,74,0.25);}
+.rb-p.on{background:var(--gl);color:var(--white);border-color:var(--gl);}
+.rb-a{background:var(--redbg);color:var(--red);border-color:rgba(192,57,43,0.2);}
+.rb-a.on{background:var(--red);color:var(--white);border-color:var(--red);}
+.rb-l{background:var(--amberbg);color:var(--amber);border-color:rgba(217,119,6,0.2);}
+.rb-l.on{background:var(--amber);color:var(--white);border-color:var(--amber);}
+.rec{padding:14px 16px;background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;border-left:4px solid var(--gl);}
+.rec.ser{border-left-color:var(--red);}
+.rec.mod{border-left-color:var(--amber);}
+.rec-meta{font-size:0.75rem;color:var(--muted);margin-bottom:4px;display:flex;gap:12px;flex-wrap:wrap;}
+.rec-text{font-size:0.88rem;color:var(--text);line-height:1.55;}
+.sugg{padding:14px 16px;background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;}
+.sugg-meta{font-size:0.72rem;color:var(--muted);margin-bottom:6px;}
+.sugg-text{font-size:0.88rem;color:var(--text);font-style:italic;}
+.aio{background:var(--off);border:1px solid var(--border);border-radius:8px;padding:18px;margin-top:14px;display:none;}
+.aio.vis{display:block;}
+.aio-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.aio-hdr h4{font-family:'Libre Baskerville',serif;font-size:0.9rem;font-weight:700;color:var(--gd);}
+.ai-text{font-size:0.83rem;line-height:1.8;white-space:pre-wrap;color:var(--text);}
+.csc{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:8px;}
+.cls-name{font-weight:700;font-size:0.9rem;color:var(--gd);}
+.cls-tchr{font-size:0.75rem;color:var(--muted);}
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;gap:0;overflow-x:auto;}
+.tab{padding:10px 18px;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;}
+.tab.active{color:var(--gd);border-bottom-color:var(--gd);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-icon{font-size:2.5rem;margin-bottom:10px;}
+.empty p{font-size:0.88rem;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:var(--white);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gd);color:#fff;padding:10px 20px;border-radius:8px;font-size:0.85rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;opacity:0;pointer-events:none;}
+.toast.show{opacity:1;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--gd);font-size:1.3rem;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:190;}
+.overlay.vis{display:block;}
+@media(max-width:700px){
+  .sidebar{position:fixed;left:-220px;top:0;bottom:0;z-index:200;transition:left 0.25s;height:100vh;}
+  .sidebar.open{left:0;}
+  .hamburger{display:block;}
+  .content{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">DARO<span>360</span></div>
+    <div class="login-school">Jitihada Senior School</div>
+    <label class="login-label">Sign in as</label>
+    <select class="login-select" id="login-role" onchange="roleChanged()">
+      <option value="">-- Select your role --</option>
+      <option value="tf">Felix Ochieng -- English &amp; Literature (Grade 10)</option>
+      <option value="tg">Grace Wanjiku -- Mathematics (Grade 10)</option>
+      <option value="tj">James Mutua -- Biology (Form 3 &amp; 4)</option>
+      <option value="tm">Mary Akinyi -- History (Form 3 &amp; 4)</option>
+      <option value="td">Duty Teacher -- On Duty Today</option>
+      <option value="admin">Administrator / Principal</option>
+      <option value="student">Learner -- Anonymous Access</option>
+    </select>
+    <div class="pin-row" id="pin-row">
+      <input type="password" maxlength="1" id="p1" placeholder="*" oninput="pnxt(this,'p2')">
+      <input type="password" maxlength="1" id="p2" placeholder="*" oninput="pnxt(this,'p3')">
+      <input type="password" maxlength="1" id="p3" placeholder="*" oninput="pnxt(this,'p4')">
+      <input type="password" maxlength="1" id="p4" placeholder="*" oninput="pnxt(this,null)">
+    </div>
+    <div class="pin-hint" id="pin-hint">Demo PIN: 1 2 3 4</div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div class="overlay" id="overlay" onclick="closeSB()"></div>
+
+<div id="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">DARO<span>360</span><div class="sidebar-school">Jitihada Senior School</div></div>
+    <div class="sidebar-user"><strong id="sb-name">--</strong><span id="sb-role">--</span></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-logout" onclick="doLogout()">Sign out</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger" onclick="openSB()">&#9776;</button>
+        <div class="topbar-title" id="page-title">Dashboard</div>
+      </div>
+      <div class="topbar-date" id="top-date"></div>
+    </div>
+    <div class="content" id="mc"></div>
+  </div>
+</div>
+
+<script>
+var CU = null;
+var USERS = {
+  tf: {name:'Felix Ochieng', role:'teacher', title:'Teacher - English & Literature', subjects:['English Language','Literature in English'], classes:['10E','10W'], cur:'cbc'},
+  tg: {name:'Grace Wanjiku', role:'teacher', title:'Teacher - Mathematics', subjects:['Mathematics'], classes:['10E','10W'], cur:'cbc'},
+  tj: {name:'James Mutua', role:'teacher', title:'Teacher - Biology', subjects:['Biology'], classes:['F3','F4'], cur:'844'},
+  tm: {name:'Mary Akinyi', role:'teacher', title:'Teacher - History', subjects:['History & Government'], classes:['F3','F4'], cur:'844'},
+  td: {name:'Duty Teacher', role:'duty', title:'Duty Teacher', subjects:[], classes:[]},
+  admin: {name:'Principal Kamau', role:'admin', title:'Principal / Administrator', subjects:[], classes:[]},
+  student: {name:'Anonymous Learner', role:'student', title:'Learner Access', subjects:[], classes:[]}
+};
+
+var STRANDS = {
+  'English Language': ['Listening and Speaking','Reading','Writing','Language Use'],
+  'Literature in English': ['Oral Literature','Poetry','Prose Fiction','Drama','Essay Writing'],
+  'Mathematics': ['Numbers','Algebra','Geometry','Measurement','Statistics'],
+  'Biology': ['Cell Biology','Ecology','Genetics','Human Physiology','Reproduction'],
+  'History & Government': ['Pre-Colonial Africa','Colonial Period','Post-Independence','Civic Education','EAC']
+};
+
+var NAV = {
+  teacher: [
+    {sec:'Teaching'},
+    {id:'dashboard', ic:'D', lbl:'Dashboard'},
+    {id:'register',  ic:'R', lbl:'Class Register'},
+    {id:'lessonplan',ic:'L', lbl:'Lesson Plans'},
+    {id:'scheme',    ic:'S', lbl:'Scheme of Work'},
+    {sec:'Records'},
+    {id:'discipline',ic:'!', lbl:'Discipline'},
+    {id:'occurrence',ic:'O', lbl:'Occurrence Book'}
+  ],
+  duty: [
+    {sec:'Duty'},
+    {id:'dashboard',  ic:'D', lbl:'Dashboard'},
+    {id:'occurrence', ic:'O', lbl:'Occurrence Book'},
+    {id:'discipline', ic:'!', lbl:'Discipline'}
+  ],
+  admin: [
+    {sec:'School'},
+    {id:'dashboard',      ic:'D', lbl:'Dashboard'},
+    {id:'admin-register', ic:'R', lbl:'Register Monitor'},
+    {id:'admin-classes',  ic:'C', lbl:'Classes'},
+    {sec:'Records'},
+    {id:'discipline', ic:'!', lbl:'Discipline'},
+    {id:'occurrence', ic:'O', lbl:'Occurrence Book'},
+    {id:'suggestions',ic:'I', lbl:'Suggestions'}
+  ],
+  student: [
+    {sec:'Learner'},
+    {id:'dashboard',  ic:'H', lbl:'Home'},
+    {id:'suggestions',ic:'I', lbl:'Suggestion Box'}
+  ]
+};
+
+// -- DB --
+function dbg(k){ try{ return JSON.parse(localStorage.getItem('d360_'+k)||'null'); } catch(e){ return null; } }
+function dbs(k,v){ localStorage.setItem('d360_'+k, JSON.stringify(v)); }
+function dbp(k,item){ var a=dbg(k)||[]; a.push(item); dbs(k,a); return a; }
+
+function initDB(){
+  if(!dbg('s10E')) dbs('s10E', mkStudents('10E',32));
+  if(!dbg('s10W')) dbs('s10W', mkStudents('10W',30));
+  if(!dbg('sF3'))  dbs('sF3',  mkStudents('F3',38));
+  if(!dbg('sF4'))  dbs('sF4',  mkStudents('F4',35));
+  if(!dbg('regs')) dbs('regs', {});
+  if(!dbg('disc')) dbs('disc', []);
+  if(!dbg('occs')) dbs('occs', []);
+  if(!dbg('sugg')) dbs('sugg', []);
+}
+
+function mkStudents(cls, n){
+  var fn=['Amina','Brian','Catherine','David','Esther','Felix','Grace','Hassan','Irene','Joseph','Kelvin','Lydia','Martin','Nancy','Oliver','Patricia','Ruth','Samuel','Teresa','Umar','Vivian','William','Alice','Bernard','Caroline','Dennis','Eunice','Fredrick','George','Helen','Ivan','Janet'];
+  var sn=['Omondi','Wanjiku','Mutua','Akinyi','Kimani','Otieno','Njoroge','Kamau','Mwangi','Owino','Karanja','Nyambura','Odhiambo','Kiptoo','Wangari','Gitau','Macharia','Ochieng','Waweru','Kipchoge','Mureithi','Adhiambo','Mugo','Nekesa','Rotich','Simiyu'];
+  var s=[];
+  for(var i=0;i<n;i++){
+    s.push({id:cls+pad(i+1), adm:'JSS/'+cls+'/'+(2024+Math.floor(i/10))+'/'+pad(i+1), name:fn[i%fn.length]+' '+sn[(i+3)%sn.length], gender:i%3===0?'M':'F'});
+  }
+  return s;
+}
+function pad(n){ return n<10?'0'+n:''+n; }
+function tdkey(){ return new Date().toISOString().slice(0,10); }
+function clslbl(c){ var m={E:'Grade 10 East',W:'Grade 10 West',F3:'Form 3',F4:'Form 4','10E':'Grade 10 East','10W':'Grade 10 West'}; return m[c]||c; }
+function greet(){ var h=new Date().getHours(); return h<12?'morning':h<17?'afternoon':'evening'; }
+
+// -- LOGIN --
+function roleChanged(){
+  var v=document.getElementById('login-role').value;
+  var pr=document.getElementById('pin-row');
+  var ph=document.getElementById('pin-hint');
+  if(v && v!=='student'){ pr.style.display='flex'; ph.style.display='block'; }
+  else { pr.style.display='none'; ph.style.display='none'; }
+}
+
+function pnxt(el, nid){
+  if(el.value.length===1 && nid) document.getElementById(nid).focus();
+}
+
+function doLogin(){
+  var role=document.getElementById('login-role').value;
+  if(!role){ alert('Please select your role.'); return; }
+  if(role!=='student'){
+    var pin=[1,2,3,4].map(function(i){ return document.getElementById('p'+i).value; }).join('');
+    if(pin!=='1234'){ alert('Wrong PIN. Demo PIN is 1234.'); return; }
+  }
+  CU=USERS[role]; CU.key=role;
+  initDB();
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('sb-name').textContent=CU.name;
+  document.getElementById('sb-role').textContent=CU.title;
+  document.getElementById('top-date').textContent=new Date().toLocaleDateString('en-KE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  buildNav();
+  go('dashboard');
+}
+
+function doLogout(){
+  CU=null;
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-role').value='';
+  [1,2,3,4].forEach(function(i){ document.getElementById('p'+i).value=''; });
+  document.getElementById('pin-row').style.display='none';
+  document.getElementById('pin-hint').style.display='none';
+}
+
+// -- NAV --
+function buildNav(){
+  var role=CU.role;
+  if(CU.key==='td') role='duty';
+  var items=NAV[role]||NAV.student;
+  var html='';
+  items.forEach(function(item){
+    if(item.sec){ html+='<div class="nav-section">'+item.sec+'</div>'; }
+    else { html+='<div class="nav-item" data-page="'+item.id+'" onclick="go(\''+item.id+'\')"><span class="nav-icon">'+item.ic+'</span>'+item.lbl+'</div>'; }
+  });
+  document.getElementById('sidebar-nav').innerHTML=html;
+}
+
+function go(page){
+  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.toggle('active', el.dataset.page===page); });
+  var titles={dashboard:'Dashboard',register:'Class Register',lessonplan:'Lesson Plans',scheme:'Scheme of Work',discipline:'Discipline Records',occurrence:'Occurrence Book','admin-register':'Register Monitor','admin-classes':'Manage Classes',suggestions:'Suggestion Box'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+  document.getElementById('mc').innerHTML='';
+  var renders={dashboard:rDash,register:rReg,lessonplan:rLP,scheme:rSOW,discipline:rDisc,occurrence:rOcc,'admin-register':rAdminReg,'admin-classes':rAdminCls,suggestions:rSugg};
+  if(renders[page]) renders[page]();
+  closeSB();
+}
+
+// -- DASHBOARD --
+function rDash(){
+  var mc=document.getElementById('mc');
+  var today=tdkey();
+
+  if(CU.role==='student'){
+    mc.innerHTML='<div class="card" style="margin-bottom:16px"><div class="card-title">Welcome to DARO360</div><p style="font-size:0.88rem;color:var(--muted);line-height:1.7">This is your learner portal for Jitihada Senior School. Use the Suggestion Box to share ideas anonymously.</p></div><div class="card"><div class="card-title">Share an idea</div><button class="btn btn-p" onclick="go(\'suggestions\')">Go to Suggestion Box</button></div>';
+    return;
+  }
+
+  var regs=dbg('regs')||{};
+  var disc=dbg('disc')||[];
+  var sugg=dbg('sugg')||[];
+
+  if(CU.role==='admin'){
+    var cls4=['10E','10W','F3','F4'];
+    var marked=cls4.filter(function(c){ return regs[today]&&regs[today][c]; });
+    var h='<div class="grid-4">';
+    h+='<div class="stat-card"><div class="stat-num">4</div><div class="stat-label">Classes</div></div>';
+    h+='<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-num">'+marked.length+'/4</div><div class="stat-label">Registers marked today</div></div>';
+    h+='<div class="stat-card" style="border-left-color:var(--amber)"><div class="stat-num">'+disc.length+'</div><div class="stat-label">Discipline cases</div></div>';
+    h+='<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-num">'+sugg.length+'</div><div class="stat-label">Student suggestions</div></div>';
+    h+='</div>';
+    var tmap={E:'Felix Ochieng',W:'Felix Ochieng / Grace Wanjiku',F3:'James Mutua / Mary Akinyi',F4:'James Mutua / Mary Akinyi'};
+    h+='<div class="grid-2">';
+    h+='<div class="card"><div class="card-title">Today\'s register status</div>';
+    cls4.forEach(function(c){
+      var done=regs[today]&&regs[today][c];
+      var tchr=tmap[c.replace('10','')]||'--';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">';
+      h+='<div><div style="font-weight:600;font-size:0.88rem">'+clslbl(c)+'</div><div style="font-size:0.75rem;color:var(--muted)">'+tchr+'</div></div>';
+      h+='<span class="badge '+(done?'bg':'br')+'">'+(done?'Marked':'Not marked')+'</span></div>';
+    });
+    h+='</div>';
+    h+='<div class="card"><div class="card-title">Quick actions</div>';
+    h+='<div style="display:flex;flex-direction:column;gap:8px">';
+    h+='<button class="btn btn-p" onclick="go(\'admin-register\')" style="justify-content:flex-start">Register Monitor</button>';
+    h+='<button class="btn btn-s" onclick="go(\'admin-classes\')" style="justify-content:flex-start">Manage Classes</button>';
+    h+='<button class="btn btn-s" onclick="go(\'discipline\')" style="justify-content:flex-start">Discipline Records</button>';
+    h+='<button class="btn btn-s" onclick="go(\'suggestions\')" style="justify-content:flex-start">Student Suggestions</button>';
+    h+='</div></div></div>';
+    mc.innerHTML=h; return;
+  }
+
+  // Teacher dashboard
+  var myCls=CU.classes||[];
+  var total=0;
+  myCls.forEach(function(c){ total+=(dbg('s'+c)||[]).length; });
+  var markedT=0;
+  myCls.forEach(function(c){ if(regs[today]&&regs[today][c]) markedT++; });
+  var myDisc=disc.filter(function(d){ return d.teacher===CU.name; });
+
+  var h='<div style="margin-bottom:18px"><div style="font-family:\'Libre Baskerville\',serif;font-size:1.1rem;font-weight:700;color:var(--gd)">Good '+greet()+', '+CU.name.split(' ')[0]+'.</div><div style="font-size:0.85rem;color:var(--muted)">Your overview for today.</div></div>';
+  h+='<div class="grid-4">';
+  h+='<div class="stat-card"><div class="stat-num">'+myCls.length+'</div><div class="stat-label">My classes</div></div>';
+  h+='<div class="stat-card" style="border-left-color:var(--gold)"><div class="stat-num">'+markedT+'/'+myCls.length+'</div><div class="stat-label">Registers marked</div></div>';
+  h+='<div class="stat-card" style="border-left-color:var(--amber)"><div class="stat-num">'+total+'</div><div class="stat-label">Total learners</div></div>';
+  h+='<div class="stat-card" style="border-left-color:var(--blue)"><div class="stat-num">'+myDisc.length+'</div><div class="stat-label">Discipline cases</div></div>';
+  h+='</div><div class="grid-2">';
+  h+='<div class="card"><div class="card-title">Register status today</div>';
+  myCls.forEach(function(c){
+    var done=regs[today]&&regs[today][c];
+    var reg=done?regs[today][c]:{};
+    var sts=dbg('s'+c)||[];
+    var pres=Object.values(reg).filter(function(v){ return v==='present'; }).length;
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">';
+    h+='<div><div style="font-weight:600;font-size:0.88rem">'+clslbl(c)+'</div>';
+    h+=done?'<div style="font-size:0.75rem;color:var(--muted)">'+pres+' present of '+sts.length+'</div>':'<div style="font-size:0.75rem;color:var(--muted)">Not yet marked</div>';
+    h+='</div><div style="display:flex;gap:8px;align-items:center">';
+    h+='<span class="badge '+(done?'bg':'ba')+'">'+(done?'Done':'Pending')+'</span>';
+    if(!done) h+='<button class="btn btn-sm btn-p" onclick="go(\'register\')">Mark</button>';
+    h+='</div></div>';
+  });
+  h+='</div><div class="card"><div class="card-title">Quick actions</div><div style="display:flex;flex-direction:column;gap:8px">';
+  h+='<button class="btn btn-p" onclick="go(\'register\')" style="justify-content:flex-start">Mark class register</button>';
+  h+='<button class="btn btn-s" onclick="go(\'lessonplan\')" style="justify-content:flex-start">Generate lesson plan</button>';
+  h+='<button class="btn btn-s" onclick="go(\'scheme\')" style="justify-content:flex-start">Build scheme of work</button>';
+  h+='<button class="btn btn-s" onclick="go(\'discipline\')" style="justify-content:flex-start">Log discipline case</button>';
+  h+='<button class="btn btn-s" onclick="go(\'occurrence\')" style="justify-content:flex-start">Write occurrence record</button>';
+  h+='</div></div></div>';
+  mc.innerHTML=h;
+}
+
+// -- REGISTER --
+function rReg(){
+  var mc=document.getElementById('mc');
+  var myCls=CU.classes||['10E','10W'];
+  var tabs='<div class="tabs">';
+  myCls.forEach(function(c,i){ tabs+='<div class="tab'+(i===0?' active':'')+'" onclick="swTab(\''+c+'\')">'+clslbl(c)+'</div>'; });
+  tabs+='</div>';
+  var panels='';
+  myCls.forEach(function(c,i){ panels+='<div class="tab-panel'+(i===0?' active':'')+'" id="rp-'+c+'">'+buildRegPanel(c)+'</div>'; });
+  mc.innerHTML=tabs+panels;
+}
+
+function buildRegPanel(cls){
+  var sts=dbg('s'+cls)||[];
+  var today=tdkey();
+  var regs=dbg('regs')||{};
+  var todayR=(regs[today]&&regs[today][cls])||{};
+  var isMarked=Object.keys(todayR).length>0;
+  var pres=Object.values(todayR).filter(function(v){ return v==='present'; }).length;
+  var abs=Object.values(todayR).filter(function(v){ return v==='absent'; }).length;
+  var late=Object.values(todayR).filter(function(v){ return v==='late'; }).length;
+  var h='<div class="card" style="margin-bottom:14px">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">';
+  h+='<div><div style="font-family:\'Libre Baskerville\',serif;font-weight:700;font-size:1rem;color:var(--gd)">'+clslbl(cls)+' -- '+new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+  h+='<div style="font-size:0.78rem;color:var(--muted)">'+sts.length+' students enrolled</div></div>';
+  if(isMarked) h+='<div style="display:flex;gap:10px;flex-wrap:wrap"><span class="badge bg">Present: '+pres+'</span><span class="badge br">Absent: '+abs+'</span><span class="badge ba">Late: '+late+'</span></div>';
+  h+='</div>';
+  if(!isMarked) h+='<div style="margin-top:10px;padding:10px 14px;background:var(--redbg);color:var(--red);border:1px solid rgba(192,57,43,0.2);border-radius:7px;font-size:0.85rem">Register not yet marked for today.</div>';
+  h+='</div>';
+  h+='<div class="card" style="padding:0;overflow:hidden">';
+  h+='<div style="padding:12px 16px;background:var(--off);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+  h+='<div style="font-size:0.82rem;font-weight:600;color:var(--muted)">ATTENDANCE</div>';
+  h+='<div style="display:flex;gap:8px"><button class="btn btn-sm btn-p" onclick="markAll(\''+cls+'\',\'present\')">Mark All Present</button><button class="btn btn-sm btn-s" onclick="saveReg(\''+cls+'\')">Save Register</button></div></div>';
+  sts.forEach(function(s){
+    var status=todayR[s.id]||'';
+    h+='<div class="reg-student" id="row-'+cls+'-'+s.id+'">';
+    h+='<div><div class="reg-name">'+s.name+'</div><div class="reg-adm">'+s.adm+' / '+s.gender+'</div></div>';
+    h+='<div class="reg-actions">';
+    h+='<button class="rb rb-p'+(status==='present'?' on':'')+'" onclick="setSt(\''+cls+'\',\''+s.id+'\',\'present\',this)">Present</button>';
+    h+='<button class="rb rb-a'+(status==='absent'?' on':'')+'" onclick="setSt(\''+cls+'\',\''+s.id+'\',\'absent\',this)">Absent</button>';
+    h+='<button class="rb rb-l'+(status==='late'?' on':'')+'" onclick="setSt(\''+cls+'\',\''+s.id+'\',\'late\',this)">Late</button>';
+    h+='</div></div>';
+  });
+  h+='</div><div style="margin-top:14px"><button class="btn btn-p" onclick="saveReg(\''+cls+'\')">Save &amp; Submit Register</button></div>';
+  return h;
+}
+
+function swTab(cls){
+  var myCls=CU.classes||['10E','10W'];
+  document.querySelectorAll('.tabs .tab').forEach(function(t,i){ t.classList.toggle('active', myCls[i]===cls); });
+  myCls.forEach(function(c){ var p=document.getElementById('rp-'+c); if(p) p.classList.toggle('active',c===cls); });
+}
+
+function setSt(cls, sid, status, btn){
+  var regs=dbg('regs')||{}; var today=tdkey();
+  if(!regs[today]) regs[today]={};
+  if(!regs[today][cls]) regs[today][cls]={};
+  regs[today][cls][sid]=status;
+  dbs('regs',regs);
+  var row=document.getElementById('row-'+cls+'-'+sid);
+  if(row){ row.querySelectorAll('.rb').forEach(function(b){ b.classList.remove('on'); }); btn.classList.add('on'); }
+}
+
+function markAll(cls, status){
+  var sts=dbg('s'+cls)||[]; var regs=dbg('regs')||{}; var today=tdkey();
+  if(!regs[today]) regs[today]={};
+  regs[today][cls]={};
+  sts.forEach(function(s){ regs[today][cls][s.id]=status; });
+  dbs('regs',regs);
+  var panel=document.getElementById('rp-'+cls);
+  if(panel) panel.innerHTML=buildRegPanel(cls);
+}
+
+function saveReg(cls){
+  var regs=dbg('regs')||{}; var today=tdkey();
+  if(!regs[today]||!regs[today][cls]||Object.keys(regs[today][cls]).length===0){ alert('Mark at least one student first.'); return; }
+  dbs('regs',regs);
+  toast('Register for '+clslbl(cls)+' saved.');
+  var panel=document.getElementById('rp-'+cls);
+  if(panel) panel.innerHTML=buildRegPanel(cls);
+}
+
+// -- LESSON PLAN --
+function rLP(){
+  var mc=document.getElementById('mc');
+  var isCBC=CU.cur==='cbc';
+  var subOpts=CU.subjects.map(function(s){ return '<option>'+s+'</option>'; }).join('');
+  var clsOpts=CU.classes.map(function(c){ return '<option value="'+c+'">'+clslbl(c)+'</option>'; }).join('');
+  var wkOpts=[1,2,3,4,5,6,7,8,9].map(function(w){ return '<option'+(w===4?' selected':'')+'>Week '+w+'</option>'; }).join('');
+  var h='<div class="card" style="margin-bottom:16px"><div class="card-title">AI Lesson Plan Generator</div>';
+  h+='<div class="form-row">';
+  h+='<div class="fg"><label class="fl">Subject</label><select class="fs" id="lp-sub" onchange="upStrands()">'+subOpts+'</select></div>';
+  h+='<div class="fg"><label class="fl">Class</label><select class="fs" id="lp-cls">'+clsOpts+'</select></div>';
+  h+='<div class="fg"><label class="fl">Term</label><select class="fs" id="lp-term"><option>Term 1</option><option selected>Term 2</option><option>Term 3</option></select></div>';
+  h+='<div class="fg"><label class="fl">Week</label><select class="fs" id="lp-wk">'+wkOpts+'</select></div>';
+  h+='</div>';
+  if(isCBC){
+    h+='<div class="form-row"><div class="fg"><label class="fl">Strand</label><select class="fs" id="lp-strand"><option>Writing</option></select></div>';
+    h+='<div class="fg"><label class="fl">Class size</label><select class="fs" id="lp-sz"><option>Under 30</option><option selected>30-45</option><option>45-60</option></select></div></div>';
+  } else {
+    h+='<div class="form-row"><div class="fg"><label class="fl">Topic</label><input class="fi" id="lp-topic" placeholder="e.g. Acid-Base Reactions"></div>';
+    h+='<div class="fg"><label class="fl">Class size</label><select class="fs" id="lp-sz"><option>Under 30</option><option selected>30-45</option><option>45-60</option></select></div></div>';
+  }
+  h+='<div class="fg" style="margin-bottom:14px"><label class="fl">Resources (optional)</label><input class="fi" id="lp-res" placeholder="e.g. textbooks, charts, projector..."></div>';
+  h+='<button class="btn btn-p" id="lp-btn" onclick="genLP()"><span id="lp-ico">&#9889;</span> <span id="lp-tx">Generate Lesson Plan</span></button></div>';
+  h+='<div class="aio" id="lp-out"><div class="aio-hdr"><h4>Lesson Plan</h4><div style="display:flex;gap:8px"><button class="btn btn-sm btn-s" onclick="cpAI(\'lp-txt\')">Copy</button><button class="btn btn-sm btn-p" onclick="prAI(\'lp-txt\')">Print</button></div></div><div class="ai-text" id="lp-txt"></div></div>';
+  mc.innerHTML=h;
+  upStrands();
+}
+
+function upStrands(){
+  var sub=document.getElementById('lp-sub');
+  var sel=document.getElementById('lp-strand');
+  if(!sub||!sel) return;
+  var opts=(STRANDS[sub.value]||['General']).map(function(s){ return '<option>'+s+'</option>'; }).join('');
+  sel.innerHTML=opts;
+}
+
+function genLP(){
+  var sub=document.getElementById('lp-sub').value;
+  var cls=document.getElementById('lp-cls').value;
+  var term=document.getElementById('lp-term').value;
+  var wk=document.getElementById('lp-wk').value;
+  var sz=document.getElementById('lp-sz').value;
+  var res=document.getElementById('lp-res').value||'textbooks, chalkboard, exercise books';
+  var isCBC=CU.cur==='cbc';
+  var strand=isCBC&&document.getElementById('lp-strand')?document.getElementById('lp-strand').value:'';
+  var topic=!isCBC&&document.getElementById('lp-topic')?document.getElementById('lp-topic').value||'selected topic':'';
+
+  var btn=document.getElementById('lp-btn');
+  var ico=document.getElementById('lp-ico');
+  var tx=document.getElementById('lp-tx');
+  var out=document.getElementById('lp-out');
+  var txt=document.getElementById('lp-txt');
+  btn.disabled=true; ico.innerHTML='<span class="spinner"></span>'; tx.textContent='Generating...';
+  out.classList.remove('vis'); txt.textContent='';
+
+  var sep='================================================';
+  var div='------------------------------------------------';
+
+  var prompt;
+  if(isCBC){
+    prompt='You are DARO360, expert in Kenya CBC Senior School curriculum. Generate a complete KICD-aligned lesson plan. Use plain text only, no markdown symbols.\n\n';
+    prompt+='School: Jitihada Senior School | Teacher: '+CU.name+'\n';
+    prompt+='Subject: '+sub+' | Class: '+clslbl(cls)+' | '+term+' | '+wk+'\n';
+    prompt+='Strand: '+strand+' | Class size: '+sz+' | Resources: '+res+'\n\n';
+    prompt+=sep+'\n';
+    prompt+='JITIHADA SENIOR SCHOOL - LESSON PLAN (CBC)\n';
+    prompt+='Generated by DARO360\n';
+    prompt+=sep+'\n';
+    prompt+='Date: ________________  Period: ________  Duration: 40 minutes\n';
+    prompt+='Teacher: '+CU.name+'  Subject: '+sub+'  Class: '+clslbl(cls)+'\n\n';
+    prompt+='STRAND: [strand]\nSUB-STRAND: [specific sub-strand from KICD]\n';
+    prompt+='SPECIFIC LEARNING OUTCOME:\n[One clear measurable SLO]\n\n';
+    prompt+='CORE COMPETENCIES: [2-3 CBC competencies]\nVALUES: [1-2 values]\n';
+    prompt+='KEY INQUIRY QUESTION: [one question]\nRESOURCES: [list]\n\n';
+    prompt+=div+'\nLESSON ACTIVITIES\n'+div+'\n\n';
+    prompt+='INTRODUCTION (5 min):\n[How teacher captures attention and activates prior knowledge]\n\n';
+    prompt+='LESSON DEVELOPMENT (25 min):\nActivity 1 (8 min): [detailed]\nActivity 2 (10 min): [collaborative/investigative]\nActivity 3 (7 min): [consolidation]\n\n';
+    prompt+='CONCLUSION (10 min):\n[Summary and follow-up]\n\n';
+    prompt+=div+'\nASSESSMENT\n'+div+'\n';
+    prompt+='Method: [technique]\nQuestions: 1. [q]  2. [q]  3. [q]\nIndicators: [what teacher observes]\n\n';
+    prompt+='DIFFERENTIATION\nSupport: [strategy]\nExtension: [activity]\n\n';
+    prompt+=div+'\nREFLECTION (complete after lesson)\n'+div+'\n';
+    prompt+='Went well: ________________________________\nImprove: ________________________________\nFollow-up: ________________________________\n';
+    prompt+=sep+'\nDARO360 | Jitihada Senior School';
+  } else {
+    prompt='You are DARO360, expert in Kenya 8-4-4 Secondary curriculum. Generate a complete lesson plan. Plain text only.\n\n';
+    prompt+='School: Jitihada Senior School | Teacher: '+CU.name+'\n';
+    prompt+='Subject: '+sub+' | Class: '+clslbl(cls)+' | '+term+' | '+wk+' | Topic: '+topic+'\n';
+    prompt+='Class size: '+sz+' | Resources: '+res+'\n\n';
+    prompt+=sep+'\n';
+    prompt+='JITIHADA SENIOR SCHOOL - LESSON PLAN (8-4-4)\n';
+    prompt+='Generated by DARO360\n';
+    prompt+=sep+'\n';
+    prompt+='Date: ________________  Period: ________  Duration: 40 minutes\n';
+    prompt+='Teacher: '+CU.name+'  Subject: '+sub+'  Class: '+clslbl(cls)+'\n\n';
+    prompt+='TOPIC: '+topic+'\nSUB-TOPIC: [specific sub-topic]\n';
+    prompt+='SPECIFIC OBJECTIVES: By end of lesson learner should be able to:\n1. [objective]\n2. [objective]\n3. [objective]\n\n';
+    prompt+='KEY WORDS: [4-5 vocabulary terms]\nRESOURCES: [list]\n\n';
+    prompt+=div+'\nLESSON ACTIVITIES\n'+div+'\n\n';
+    prompt+='INTRODUCTION (5 min):\n[How teacher introduces topic and links to prior knowledge]\n\n';
+    prompt+='LESSON DEVELOPMENT (25 min):\nStep 1 (8 min): [detailed]\nStep 2 (10 min): [class activity]\nStep 3 (7 min): [practice/consolidation]\n\n';
+    prompt+='CONCLUSION (10 min):\n[Summary, questions, assignment]\n\n';
+    prompt+=div+'\nEVALUATION\n[2-3 questions to assess understanding]\n\n';
+    prompt+='TEACHER SELF-EVALUATION\nObjectives achieved: Yes / Partially / No\nReason: ________________________________\n';
+    prompt+=sep+'\nDARO360 | Jitihada Senior School';
+  }
+
+  callClaude(prompt, function(text){
+    out.classList.add('vis'); txt.textContent=text;
+    btn.disabled=false; ico.textContent='L'; tx.textContent='Generate Another';
+  }, function(){
+    out.classList.add('vis'); txt.textContent='Connection error. Check your internet and try again.';
+    btn.disabled=false; ico.textContent='L'; tx.textContent='Try Again';
+  });
+}
+
+// -- SCHEME OF WORK --
+function rSOW(){
+  var mc=document.getElementById('mc');
+  var subOpts=CU.subjects.map(function(s){ return '<option>'+s+'</option>'; }).join('');
+  var clsOpts=CU.classes.map(function(c){ return '<option value="'+c+'">'+clslbl(c)+'</option>'; }).join('');
+  var h='<div class="card" style="margin-bottom:16px"><div class="card-title">Scheme of Work Generator</div>';
+  h+='<div class="form-row">';
+  h+='<div class="fg"><label class="fl">Subject</label><select class="fs" id="sow-sub">'+subOpts+'</select></div>';
+  h+='<div class="fg"><label class="fl">Class</label><select class="fs" id="sow-cls">'+clsOpts+'</select></div>';
+  h+='<div class="fg"><label class="fl">Term</label><select class="fs" id="sow-term"><option>Term 1</option><option selected>Term 2</option><option>Term 3</option></select></div>';
+  h+='<div class="fg"><label class="fl">Weeks</label><select class="fs" id="sow-wks"><option>9 weeks</option><option selected>10 weeks</option><option>11 weeks</option></select></div>';
+  h+='</div>';
+  h+='<button class="btn btn-p" id="sow-btn" onclick="genSOW()"><span id="sow-ico">S</span> <span id="sow-tx">Generate Scheme of Work</span></button></div>';
+  h+='<div class="aio" id="sow-out"><div class="aio-hdr"><h4>Scheme of Work</h4><div style="display:flex;gap:8px"><button class="btn btn-sm btn-s" onclick="cpAI(\'sow-txt\')">Copy</button><button class="btn btn-sm btn-p" onclick="prAI(\'sow-txt\')">Print</button></div></div><div class="ai-text" id="sow-txt"></div></div>';
+  mc.innerHTML=h;
+}
+
+function genSOW(){
+  var sub=document.getElementById('sow-sub').value;
+  var cls=document.getElementById('sow-cls').value;
+  var term=document.getElementById('sow-term').value;
+  var wks=document.getElementById('sow-wks').value;
+  var isCBC=CU.cur==='cbc';
+  var btn=document.getElementById('sow-btn');
+  var ico=document.getElementById('sow-ico');
+  var tx=document.getElementById('sow-tx');
+  var out=document.getElementById('sow-out');
+  var txt=document.getElementById('sow-txt');
+  btn.disabled=true; ico.innerHTML='<span class="spinner"></span>'; tx.textContent='Generating...';
+  out.classList.remove('vis');
+
+  var sep='================================================';
+  var hdr=isCBC?'WK | STRAND | SUB-STRAND | SPECIFIC LEARNING OUTCOME | KEY ACTIVITIES | RESOURCES | ASSESSMENT':'WK | TOPIC | SUB-TOPIC | SPECIFIC OBJECTIVES | KEY ACTIVITIES | RESOURCES | ASSESSMENT';
+  var prompt='Generate a complete '+term+' Scheme of Work for '+sub+', '+clslbl(cls)+', Jitihada Senior School, covering '+wks+'.\n';
+  prompt+=isCBC?'Use KICD CBC curriculum strands and sub-strands.':'Use Kenya 8-4-4 secondary curriculum topics.';
+  prompt+=' Plain text only, no markdown.\n\n';
+  prompt+=sep+'\n';
+  prompt+='JITIHADA SENIOR SCHOOL - SCHEME OF WORK\n';
+  prompt+=(isCBC?'(CBC Senior School)':'(8-4-4 Secondary)')+'\n';
+  prompt+='Subject: '+sub+'  Class: '+clslbl(cls)+'  '+term+'\n';
+  prompt+='Teacher: '+CU.name+'  School: Jitihada Senior School\n\n';
+  prompt+=hdr+'\n';
+  prompt+='---|--------|-----------|------------------------|----------------|-----------|----------\n\n';
+  prompt+='Fill all '+wks+' with accurate curriculum content. Each week on its own row.\n\n';
+  prompt+='Prepared by: '+CU.name+'  Date: ________________\n';
+  prompt+='HOD Signature: ________________  Principal: ________________\n\n';
+  prompt+=sep+'\nDARO360 | Jitihada Senior School';
+
+  callClaude(prompt, function(text){
+    out.classList.add('vis'); txt.textContent=text;
+    btn.disabled=false; ico.textContent='S'; tx.textContent='Generate Another';
+  }, function(){
+    out.classList.add('vis'); txt.textContent='Connection error. Try again.';
+    btn.disabled=false; ico.textContent='S'; tx.textContent='Try Again';
+  });
+}
+
+// -- DISCIPLINE --
+function rDisc(){
+  var mc=document.getElementById('mc');
+  var records=dbg('disc')||[];
+  var isAdmin=CU.role==='admin';
+  var myR=isAdmin?records:records.filter(function(r){ return r.teacher===CU.name; });
+  var h='';
+
+  if(!isAdmin){
+    var clsOpts=(CU.classes||['10E']).map(function(c){ return '<option value="'+c+'">'+clslbl(c)+'</option>'; }).join('');
+    h+='<div class="card" style="margin-bottom:16px"><div class="card-title">Log a Discipline Case</div>';
+    h+='<div class="form-row">';
+    h+='<div class="fg"><label class="fl">Student name</label><input class="fi" id="d-name" placeholder="Full name"></div>';
+    h+='<div class="fg"><label class="fl">Class</label><select class="fs" id="d-cls">'+clsOpts+'</select></div>';
+    h+='<div class="fg"><label class="fl">Adm No.</label><input class="fi" id="d-adm" placeholder="JSS/..."></div>';
+    h+='<div class="fg"><label class="fl">Severity</label><select class="fs" id="d-sev"><option>Minor</option><option>Moderate</option><option>Serious</option></select></div>';
+    h+='</div>';
+    h+='<div class="fg" style="margin-bottom:12px"><label class="fl">Incident description</label><textarea class="ft" id="d-inc" placeholder="Describe what happened, when, where, and witnesses..."></textarea></div>';
+    h+='<div class="fg" style="margin-bottom:14px"><label class="fl">Intervention / Action taken</label><textarea class="ft" id="d-act" placeholder="What action was taken? Counselling, parent called, suspension..."></textarea></div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    h+='<button class="btn btn-d" onclick="saveDisc()">Save Discipline Record</button>';
+    h+='<button class="btn btn-s" id="dai-btn" onclick="getDiscAdvice()"><span id="dai-ico">AI</span> <span id="dai-tx">Get AI Intervention Advice</span></button>';
+    h+='</div>';
+    h+='<div class="aio" id="dai-out"><div class="aio-hdr"><h4>Suggested Interventions</h4><button class="btn btn-sm btn-s" onclick="cpAI(\'dai-txt\')">Copy</button></div><div class="ai-text" id="dai-txt"></div></div>';
+    h+='</div>';
+  }
+
+  h+='<div class="card"><div class="card-title">'+(isAdmin?'All discipline records':'My discipline records')+' ('+myR.length+')</div>';
+  if(myR.length){
+    myR.slice().reverse().forEach(function(r){
+      var sev=r.severity==='Serious'?'ser':r.severity==='Moderate'?'mod':'';
+      h+='<div class="rec '+sev+'">';
+      h+='<div class="rec-meta"><span>'+r.date+'</span><span>'+r.student+'</span><span>'+clslbl(r.class)+'</span>';
+      h+='<span class="badge '+(r.severity==='Serious'?'br':r.severity==='Moderate'?'ba':'bb')+'">'+r.severity+'</span>';
+      if(isAdmin) h+='<span style="color:var(--muted)">by '+r.teacher+'</span>';
+      h+='</div>';
+      h+='<div class="rec-text"><strong>Incident:</strong> '+r.incident+'</div>';
+      if(r.action) h+='<div class="rec-text" style="margin-top:4px"><strong>Action:</strong> '+r.action+'</div>';
+      h+='</div>';
+    });
+  } else {
+    h+='<div class="empty"><div class="empty-icon">OK</div><p>No discipline cases recorded yet.</p></div>';
+  }
+  h+='</div>';
+  mc.innerHTML=h;
+}
+
+function saveDisc(){
+  var name=document.getElementById('d-name').value.trim();
+  var cls=document.getElementById('d-cls').value;
+  var adm=document.getElementById('d-adm').value.trim();
+  var sev=document.getElementById('d-sev').value;
+  var inc=document.getElementById('d-inc').value.trim();
+  var act=document.getElementById('d-act').value.trim();
+  if(!name||!inc){ alert('Fill in student name and incident description.'); return; }
+  dbp('disc',{id:Date.now(),date:new Date().toLocaleDateString('en-KE'),student:name,adm:adm,class:cls,severity:sev,incident:inc,action:act,teacher:CU.name});
+  toast('Discipline record saved.');
+  go('discipline');
+}
+
+function getDiscAdvice(){
+  var name=document.getElementById('d-name').value||'the student';
+  var sev=document.getElementById('d-sev').value;
+  var inc=document.getElementById('d-inc').value||'unspecified behaviour';
+  var btn=document.getElementById('dai-btn');
+  var ico=document.getElementById('dai-ico');
+  var tx=document.getElementById('dai-tx');
+  var out=document.getElementById('dai-out');
+  var txt=document.getElementById('dai-txt');
+  btn.disabled=true; ico.innerHTML='<span class="spinner"></span>'; tx.textContent='Getting advice...';
+  out.classList.remove('vis');
+  var prompt='You are a school counselling expert in a Kenyan senior school context. A teacher at Jitihada Senior School has reported:\n\nStudent: '+name+'\nSeverity: '+sev+'\nIncident: '+inc+'\n\nProvide practical, culturally appropriate intervention advice for a Kenyan school setting. Plain text only. Include:\n1. Immediate actions (today)\n2. Short-term interventions (this week)\n3. Long-term follow-up\n4. When to involve parents\n5. When to involve administration\n\nBe specific and practical for the Kenyan school context.';
+  callClaude(prompt, function(text){
+    out.classList.add('vis'); txt.textContent=text;
+    btn.disabled=false; ico.textContent='AI'; tx.textContent='Get AI Advice';
+  }, function(){
+    out.classList.add('vis'); txt.textContent='Connection error.';
+    btn.disabled=false; ico.textContent='AI'; tx.textContent='Try Again';
+  });
+}
+
+// -- OCCURRENCE --
+function rOcc(){
+  var mc=document.getElementById('mc');
+  var records=dbg('occs')||[];
+  var h='<div class="card" style="margin-bottom:16px"><div class="card-title">Record an Occurrence</div>';
+  h+='<div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">Record any event in school -- fights, accidents, unusual incidents, emergencies.</div>';
+  h+='<div class="form-row">';
+  h+='<div class="fg"><label class="fl">Event type</label><select class="fs" id="o-type"><option>Security incident</option><option>Student altercation / fight</option><option>Accident / injury</option><option>Visitor / external person</option><option>Property damage</option><option>Fire / emergency</option><option>Missing student</option><option>Parent dispute</option><option>Other</option></select></div>';
+  h+='<div class="fg"><label class="fl">Location</label><input class="fi" id="o-loc" placeholder="e.g. Block B corridor"></div>';
+  h+='<div class="fg"><label class="fl">Time</label><input class="fi" id="o-time" type="time" value="'+new Date().toTimeString().slice(0,5)+'"></div>';
+  h+='<div class="fg"><label class="fl">Severity</label><select class="fs" id="o-sev"><option>Low - For information</option><option>Moderate - Requires follow-up</option><option>Serious - Immediate action needed</option></select></div>';
+  h+='</div>';
+  h+='<div class="fg" style="margin-bottom:12px"><label class="fl">Full description</label><textarea class="ft" id="o-desc" placeholder="Describe exactly what happened, who was involved, and actions taken..." style="min-height:100px"></textarea></div>';
+  h+='<div class="fg" style="margin-bottom:14px"><label class="fl">Persons involved</label><input class="fi" id="o-pers" placeholder="e.g. Brian Omondi (JSS/10E/001), Grace Wanjiku (Teacher)"></div>';
+  h+='<button class="btn btn-p" onclick="saveOcc()">Save Occurrence Record</button></div>';
+  h+='<div class="card"><div class="card-title">Occurrence log ('+records.length+' records)</div>';
+  if(records.length){
+    records.slice().reverse().forEach(function(r){
+      var sev=r.severity.includes('Serious')?'ser':r.severity.includes('Moderate')?'mod':'';
+      h+='<div class="rec '+sev+'">';
+      h+='<div class="rec-meta"><span>'+r.date+'</span><span>'+r.time+'</span>';
+      h+='<span class="badge '+(r.severity.includes('Serious')?'br':r.severity.includes('Moderate')?'ba':'bb')+'">'+r.severity.split(' - ')[0]+'</span>';
+      if(r.location) h+='<span>'+r.location+'</span>';
+      h+='<span style="color:var(--muted)">by '+r.teacher+'</span></div>';
+      h+='<div class="rec-text" style="font-weight:600;margin-bottom:3px">'+r.type+'</div>';
+      h+='<div class="rec-text">'+r.description+'</div>';
+      if(r.persons) h+='<div class="rec-text" style="margin-top:4px;color:var(--muted)">Persons: '+r.persons+'</div>';
+      h+='</div>';
+    });
+  } else {
+    h+='<div class="empty"><div class="empty-icon">OK</div><p>No occurrences recorded yet.</p></div>';
+  }
+  h+='</div>';
+  mc.innerHTML=h;
+}
+
+function saveOcc(){
+  var type=document.getElementById('o-type').value;
+  var loc=document.getElementById('o-loc').value;
+  var time=document.getElementById('o-time').value;
+  var sev=document.getElementById('o-sev').value;
+  var desc=document.getElementById('o-desc').value.trim();
+  var pers=document.getElementById('o-pers').value;
+  if(!desc){ alert('Please describe what happened.'); return; }
+  dbp('occs',{id:Date.now(),date:new Date().toLocaleDateString('en-KE'),time:time,type:type,location:loc,severity:sev,description:desc,persons:pers,teacher:CU.name});
+  toast('Occurrence recorded.'+(sev.includes('Serious')?' All staff notified (simulation).':''));
+  go('occurrence');
+}
+
+// -- ADMIN REGISTER MONITOR --
+function rAdminReg(){
+  var mc=document.getElementById('mc');
+  var today=tdkey();
+  var regs=dbg('regs')||{};
+  var todayR=regs[today]||{};
+  var cls4=['10E','10W','F3','F4'];
+  var tmap={'10E':'Felix Ochieng','10W':'Felix Ochieng / Grace Wanjiku','F3':'James Mutua / Mary Akinyi','F4':'James Mutua / Mary Akinyi'};
+  var h='<div class="card" style="margin-bottom:16px"><div class="card-title">Live register status -- '+new Date().toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
+  h+='<div class="grid-2">';
+  cls4.forEach(function(c){
+    var done=todayR[c]&&Object.keys(todayR[c]).length>0;
+    var reg=todayR[c]||{};
+    var sts=dbg('s'+c)||[];
+    var pres=Object.values(reg).filter(function(v){ return v==='present'; }).length;
+    var abs=Object.values(reg).filter(function(v){ return v==='absent'; }).length;
+    var late=Object.values(reg).filter(function(v){ return v==='late'; }).length;
+    h+='<div class="csc" style="border-left:4px solid '+(done?'var(--gl)':'var(--red)')+';">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+    h+='<div><div class="cls-name">'+clslbl(c)+'</div><div class="cls-tchr">'+tmap[c]+'</div></div>';
+    h+='<span class="badge '+(done?'bg':'br')+'">'+(done?'Marked':'Not marked')+'</span></div>';
+    if(done){
+      h+='<div style="display:flex;gap:12px;font-size:0.75rem">';
+      h+='<span style="color:var(--gl)">'+pres+' present</span>';
+      h+='<span style="color:var(--red)">'+abs+' absent</span>';
+      h+='<span style="color:var(--amber)">'+late+' late</span></div>';
+    } else {
+      h+='<div style="font-size:0.78rem;color:var(--muted)">Awaiting teacher to mark</div>';
+    }
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<div style="font-size:0.72rem;color:var(--muted)">'+sts.length+' enrolled</div>';
+    h+='<button class="btn btn-sm btn-s" onclick="viewClsReg(\''+c+'\')">View</button></div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div id="cls-reg-view"></div>';
+  mc.innerHTML=h;
+}
+
+function viewClsReg(cls){
+  var today=tdkey();
+  var regs=dbg('regs')||{};
+  var reg=(regs[today]&&regs[today][cls])||{};
+  var sts=dbg('s'+cls)||[];
+  var div=document.getElementById('cls-reg-view');
+  if(!sts.length){ div.innerHTML='<p style="color:var(--muted);padding:16px">No students found.</p>'; return; }
+  var h='<div class="card" style="margin-top:16px"><div class="card-title">'+clslbl(cls)+' -- Attendance</div>';
+  h+='<div class="tw"><table><tr><th>#</th><th>Student name</th><th>Adm No.</th><th>Status</th></tr>';
+  sts.forEach(function(s,i){
+    var status=reg[s.id]||'Not marked';
+    h+='<tr><td>'+(i+1)+'</td><td>'+s.name+'</td><td>'+s.adm+'</td><td><span class="badge '+(status==='present'?'bg':status==='absent'?'br':status==='late'?'ba':'bgr')+'">'+status+'</span></td></tr>';
+  });
+  h+='</table></div></div>';
+  div.innerHTML=h;
+  div.scrollIntoView({behavior:'smooth'});
+}
+
+// -- ADMIN CLASSES --
+function rAdminCls(){
+  var mc=document.getElementById('mc');
+  var clsData=[
+    {id:'10E',name:'Grade 10 East',cur:'CBC',tchr:'Felix Ochieng',n:(dbg('s10E')||[]).length},
+    {id:'10W',name:'Grade 10 West',cur:'CBC',tchr:'Grace Wanjiku',n:(dbg('s10W')||[]).length},
+    {id:'F3', name:'Form 3',       cur:'8-4-4',tchr:'James Mutua / Mary Akinyi',n:(dbg('sF3')||[]).length},
+    {id:'F4', name:'Form 4',       cur:'8-4-4',tchr:'James Mutua / Mary Akinyi',n:(dbg('sF4')||[]).length}
+  ];
+  var h='<div class="card" style="margin-bottom:16px"><div class="card-title">Jitihada Senior School -- Classes</div><div class="grid-2">';
+  clsData.forEach(function(c){
+    h+='<div class="card" style="border-left:4px solid '+(c.cur==='CBC'?'var(--gl)':'var(--blue)')+';">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">';
+    h+='<div><div style="font-family:\'Libre Baskerville\',serif;font-weight:700;font-size:1rem;color:var(--gd)">'+c.name+'</div>';
+    h+='<div style="font-size:0.75rem;color:var(--muted);margin-top:2px">'+c.tchr+'</div></div>';
+    h+='<span class="badge '+(c.cur==='CBC'?'bg':'bb')+'">'+c.cur+'</span></div>';
+    h+='<div style="font-size:0.85rem"><strong>'+c.n+'</strong> <span style="color:var(--muted)">students</span></div>';
+    h+='<div style="margin-top:12px"><button class="btn btn-sm btn-s" onclick="viewCls(\''+c.id+'\')">View students</button></div>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+  var total=clsData.reduce(function(a,c){ return a+c.n; },0);
+  h+='<div class="card"><div class="card-title">School summary</div><div class="tw"><table>';
+  h+='<tr><th>Class</th><th>Curriculum</th><th>Class teacher</th><th>Enrolment</th></tr>';
+  clsData.forEach(function(c){
+    h+='<tr><td><strong>'+c.name+'</strong></td><td><span class="badge '+(c.cur==='CBC'?'bg':'bb')+'">'+c.cur+'</span></td><td>'+c.tchr+'</td><td>'+c.n+'</td></tr>';
+  });
+  h+='<tr><td colspan="3"><strong>Total</strong></td><td><strong>'+total+'</strong></td></tr>';
+  h+='</table></div></div>';
+  h+='<div id="admin-stlist"></div>';
+  mc.innerHTML=h;
+}
+
+function viewCls(cls){
+  var sts=dbg('s'+cls)||[];
+  var div=document.getElementById('admin-stlist');
+  var h='<div class="card" style="margin-top:16px"><div class="card-title">'+clslbl(cls)+' -- Student list ('+sts.length+')</div>';
+  h+='<div class="tw"><table><tr><th>#</th><th>Name</th><th>Adm No.</th><th>Gender</th></tr>';
+  sts.forEach(function(s,i){
+    h+='<tr><td>'+(i+1)+'</td><td>'+s.name+'</td><td>'+s.adm+'</td><td>'+(s.gender==='M'?'Male':'Female')+'</td></tr>';
+  });
+  h+='</table></div></div>';
+  div.innerHTML=h;
+  div.scrollIntoView({behavior:'smooth'});
+}
+
+// -- SUGGESTIONS --
+function rSugg(){
+  var mc=document.getElementById('mc');
+  var isAdmin=CU.role==='admin';
+  var sugg=dbg('sugg')||[];
+  var h='';
+
+  if(!isAdmin){
+    h+='<div class="card" style="margin-bottom:16px"><div class="card-title">Share your idea anonymously</div>';
+    h+='<div style="background:var(--gp);border:1px solid rgba(30,122,74,0.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:0.85rem;color:var(--gl)">Your identity is completely hidden. Not even the Principal can see who submitted this.</div>';
+    h+='<div class="fg" style="margin-bottom:12px"><label class="fl">Category</label><select class="fs" id="sg-cat"><option>School facilities</option><option>Teaching &amp; learning</option><option>School rules &amp; discipline</option><option>Activities &amp; clubs</option><option>Food &amp; dining</option><option>Safety &amp; security</option><option>Communication</option><option>Other</option></select></div>';
+    h+='<div class="fg" style="margin-bottom:14px"><label class="fl">Your suggestion</label><textarea class="ft" id="sg-txt" style="min-height:100px" placeholder="Share your idea for improving the school. Be specific..."></textarea></div>';
+    h+='<button class="btn btn-g" onclick="saveSugg()">Submit Anonymously</button></div>';
+  }
+
+  h+='<div class="card"><div class="card-title">'+(isAdmin?'All student suggestions':'Recent suggestions')+' ('+sugg.length+')</div>';
+  if(sugg.length){
+    sugg.slice().reverse().forEach(function(s){
+      h+='<div class="sugg"><div class="sugg-meta">'+s.date+' &nbsp;/&nbsp; <span class="badge bb">'+s.category+'</span></div>';
+      h+='<div class="sugg-text">"'+s.text+'"</div></div>';
+    });
+  } else {
+    h+='<div class="empty"><div class="empty-icon">!</div><p>No suggestions yet. Be the first to share an idea.</p></div>';
+  }
+  h+='</div>';
+  mc.innerHTML=h;
+}
+
+function saveSugg(){
+  var cat=document.getElementById('sg-cat').value;
+  var txt=document.getElementById('sg-txt').value.trim();
+  if(!txt){ alert('Please write your suggestion first.'); return; }
+  dbp('sugg',{id:Date.now(),date:new Date().toLocaleDateString('en-KE'),category:cat,text:txt});
+  toast('Your suggestion has been submitted anonymously. Thank you!');
+  go('suggestions');
+}
+
+// -- CLAUDE API --
+function callClaude(prompt, onSuccess, onError){
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){ return r.json(); })
+  .then(function(data){
+    var text=(data.content||[]).map(function(b){ return b.text||''; }).join('');
+    if(text) onSuccess(text);
+    else onError();
+  }).catch(function(){ onError(); });
+}
+
+// -- UTILITIES --
+function cpAI(id){
+  var txt=document.getElementById(id);
+  if(!txt) return;
+  navigator.clipboard.writeText(txt.textContent).then(function(){ toast('Copied to clipboard!'); });
+}
+
+function prAI(id){
+  var txt=document.getElementById(id);
+  if(!txt) return;
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>DARO360 - Jitihada Senior School</title><style>body{font-family:monospace;font-size:12px;line-height:1.8;padding:20px;white-space:pre-wrap}</style></head><body>'+txt.textContent+'</body></html>');
+  w.document.close(); w.print();
+}
+
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+function openSB(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('vis'); }
+function closeSB(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('vis'); }
+</script>
+</body>
+</html>
